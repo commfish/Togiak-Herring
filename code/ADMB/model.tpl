@@ -297,12 +297,17 @@ DATA_SECTION
   // |  
   // | -mat_Bk     ->  number of maturity blocks (1 split = 2 blocks)
   // | -mat_Bk_Yrs ->  specific years in which maturity-at-age changes
- 
+  // | -gs_Bk      ->  number of gear selectivity blocks (1 split = 2 blocks)
+  // | -gs_Bk_Yrs  ->  specific years in which gear-selectivity-at-age changes
+
 
   init_number mat_Bk
   init_vector mat_Bk_Yrs(1,mat_Bk+1)
   vector mat_Bk_Idx(1,mat_Bk+1)
 
+  init_number gs_Bk
+  init_vector gs_Bk_Yrs(1,gs_Bk+1)
+  vector gs_Bk_Idx(1,gs_Bk+1)
 
 
   // |--------------------------------------------------------------------------|
@@ -337,6 +342,10 @@ DATA_SECTION
        mat_Bk_Idx(i)=mat_Bk_Yrs(i)-mod_syr+1;
      }
 
+   for (int i=1;i<=gs_Bk+1;i++)
+     {
+       gs_Bk_Idx(i)=gs_Bk_Yrs(i)-mod_syr+1;
+     }
 
 
  END_CALCS
@@ -365,13 +374,13 @@ PARAMETER_SECTION
   // |   seine selectivity is constant over all years, varying by age
   // |   early-late fishery selectivities change in 1993
 
-     init_bounded_vector mat_a(1,mat_Bk,5,7,ph_mat_a)
-     init_bounded_vector mat_b(1,mat_Bk,0,2,ph_mat_b)
+     init_bounded_vector mat_a(1,mat_Bk,1,10,ph_mat_a)
+     init_bounded_vector mat_b(1,mat_Bk,0,5,ph_mat_b)
      matrix maturity(1,myrs,1,nages)
 
-     init_bounded_number gs_seine_a(5,7,ph_gs_a)
-     init_bounded_number gs_seine_b(0,2,ph_gs_b)
-     vector GS_seine(1,nages)
+     init_bounded_vector gs_a(1,gs_Bk,2,10,ph_mat_a)
+     init_bounded_vector gs_b(1,gs_Bk,0,5,ph_mat_b)
+     matrix gs_seine(1,myrs,1,nages)
 
 
   // |---------------------------------------------------------------------------------|
@@ -440,7 +449,6 @@ PARAMETER_SECTION
   // |- GHL             general harvest limit                         
 
   vector for_naa(1,nages)
-  //vector sortx(1,nages)
   vector for_mat_naa(1,nages)        
   vector for_mat_baa(1,nages)      
   vector for_mat_prop(1,nages)
@@ -506,8 +514,8 @@ PRELIMINARY_CALCS_SECTION
          mat_a(2)=6;
          mat_b(1)=1.2;
          mat_b(2)=1.1;
-         gs_seine_a=6;
-         gs_seine_b=1;
+         gs_a=6;
+         gs_b=1;
 
          init_age_4(1)=	820.29;
          init_age_4(2)=	820.29;
@@ -586,20 +594,29 @@ PROCEDURE_SECTION
 FUNCTION get_parameters
 
   maturity.initialize();
-  GS_seine.initialize();
+  gs_seine.initialize();
   Sur.initialize();
   S_for.initialize();
 
   // Seine fishery-unconstrained then fix at age 9
-   for (int j=1;j<=5;j++)
-     {
-            GS_seine(j)=1/(1+exp(-1.0*gs_seine_b*((j+3)-gs_seine_a)));
-  
-    for (int j=6;j<=nages;j++) 
-      {
-           GS_seine(j)=1;
-           }
-           }
+
+  for (int t=1;t<=gs_Bk;t++)
+  {
+    for (int i=gs_Bk_Idx(t);i<=gs_Bk_Idx(t+1);i++)
+       {
+         for (int j=1;j<=nages;j++)
+          {
+          if (j<=5)
+          {
+            gs_seine(i,j)=1/(1+exp(-1.0*gs_b(t)*((j+2)-gs_a(t))));
+          }
+          else
+          {
+          gs_seine(i,j)=1;
+          }
+       }
+   }
+  }   
   // Early late Maturity time periods &  fix 8+=1
 
   for (int t=1;t<=mat_Bk;t++)
@@ -635,8 +652,6 @@ FUNCTION Time_Loop
   est_mat_comp.initialize();
   
 
-
-
   //----------------------------------------------------------------------------
   // YEAR ONE
   //----------------------------------------------------------------------------
@@ -654,7 +669,7 @@ FUNCTION Time_Loop
 
      for(int j=1;j<=nages;j++)
        {
-         sel_naa(i,j)  = naa(i,j) * GS_seine(j);
+         sel_naa(i,j)  = naa(i,j) * gs_seine(i,j);
          mat_naa(i,j)  = naa(i,j) * maturity(i,j); 
        }
    
@@ -726,7 +741,7 @@ FUNCTION Time_Loop
 
      for(int j=1;j<=nages;j++)
        {
-         sel_naa(i,j)  = naa(i,j) * GS_seine(j);//naa vulnerable to gear
+         sel_naa(i,j)  = naa(i,j) * gs_seine(i,j);//naa vulnerable to gear
          mat_naa(i,j)  = naa(i,j) * maturity(i,j); 
        }
        
@@ -943,20 +958,18 @@ FUNCTION output_FIGDATA
 FUNCTION get_FIGDATAAGE
   FIGDATAAGE.initialize();
   for (int i=1;i<=nages;i++){
- //Gear_Selectivity
-  for (int j=1;j<=1;j++){FIGDATAAGE(i,j)=GS_seine(i);}
  //Survival
-  for (int j=2;j<=2;j++){FIGDATAAGE(i,j)=Sur(i);}
+  for (int j=1;j<=1;j++){FIGDATAAGE(i,j)=Sur(i);}
  //Mature biomass at age (forecasted; metric tons)
-  for (int j=3;j<=3;j++){FIGDATAAGE(i,j)=for_mat_baa(i);}
+  for (int j=2;j<=2;j++){FIGDATAAGE(i,j)=for_mat_baa(i);}
  //Mature biomass at age (forecasted; metric tons)
-  for (int j=4;j<=4;j++){FIGDATAAGE(i,j)=for_mat_prop(i);}
+  for (int j=3;j<=3;j++){FIGDATAAGE(i,j)=for_mat_prop(i);}
  //Forecasted weight at age
-  for (int j=5;j<=5;j++){FIGDATAAGE(i,j)=fw_a_a(i);}}
+  for (int j=4;j<=4;j++){FIGDATAAGE(i,j)=fw_a_a(i);}}
 FUNCTION output_FIGDATAAGE
 
  ofstream figdataage("FIGDATAAGE.dat");
- figdataage<<"GS_seine Survival for_mat_baa for_mat_prop fw_a_a"<<endl;
+ figdataage<<"gS_seine Survival for_mat_baa for_mat_prop fw_a_a"<<endl;
  figdataage<<FIGDATAAGE<<endl;
  
 FUNCTION get_report
@@ -1009,8 +1022,10 @@ FUNCTION get_report
     Report<<"Survival"<<","<<Sur[1]<<","<<Sur[2]<<","<<Sur[3]<<","<<Sur[4]<<","<<Sur[5]<<","<<Sur[6]<<","<<Sur[7]<<","<<Sur[8]<<","<<Sur[9]<<endl;
     Report<<"  "<<endl;
 
-    Report<<","<<"Age 4"<<","<<"Age 5"<<","<<"Age 6"<<","<<"Age 7"<<","<<"Age 8"<<","<<"Age 9 "<<","<<"Age 10"<<","<<"Age 11"<<","<<"Age 12+"<<endl;
-    Report<<"Gear Selectivity"<<","<<GS_seine[1]<<","<<GS_seine[2]<<","<<GS_seine[3]<<","<<GS_seine[4]<<","<<GS_seine[5]<<","<<GS_seine[6]<<","<<GS_seine[7]<<","<<GS_seine[8]<<","<<GS_seine[9]<<endl;
+    Report<<"Gear Selectivity"<<endl;
+    Report<<"Year"<<","<<"Age 4"<<","<<"Age 5"<<","<<"Age 6"<<","<<"Age 7"<<","<<"Age 8"<<","<<"Age 9 "<<","<<"Age 10"<<","<<"Age 11"<<","<<"Age12+"<<endl;
+    for(int n; n<=vsize-2; n++)
+    Report<<Year[n+mod_syr]<<","<<gs_seine(n+1,1)<<","<<gs_seine(n+1,2)<<","<<gs_seine(n+1,3)<<","<<gs_seine(n+1,4)<<","<<gs_seine(n+1,5)<<","<<gs_seine(n+1,6)<<","<<gs_seine(n+1,7)<<","<<gs_seine(n+1,8)<<","<<gs_seine(n+1,9)<<endl;
     Report<<"  "<<endl;
 
     Report<<"Maturity"<<endl;
@@ -1072,8 +1087,6 @@ FUNCTION get_report
     for(int n; n<=vsize-2; n++)
     Report<<Year[n+mod_syr]<<","<<est_sp_naa(n+1,1)<<","<<est_sp_naa(n+1,2)<<","<<est_sp_naa(n+1,3)<<","<<est_sp_naa(n+1,4)<<","<<est_sp_naa(n+1,5)<<","<<est_sp_naa(n+1,6)<<","<<est_sp_naa(n+1,7)<<","<<est_sp_naa(n+1,8)<<","<<est_sp_naa(n+1,9)<<endl;
     Report<<"  "<<endl;
-    
-    Report<<"  "<<endl;
 
     Report.close();
  
@@ -1131,7 +1144,7 @@ GLOBALS_SECTION
   << setprecision(4) << setfixed() << object << endl;
 
 REPORT_SECTION 
-  REPORT(GS_seine);
+  REPORT(gs_seine);
   REPORT(sel_naa);
   REPORT(tot_sel_N);
   REPORT(est_seine_comp);
