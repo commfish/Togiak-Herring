@@ -7,4 +7,5 @@
 .hes
 .prj
 .*Rproj
-.csv
+*.csv
+*.png
