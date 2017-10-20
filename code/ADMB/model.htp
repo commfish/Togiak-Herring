@@ -92,7 +92,7 @@ public:
 private:
   ivector integer_control_flags;
   dvector double_control_flags;
-  param_init_bounded_vector init_age_3;
+  param_init_bounded_vector init_age_4;
   param_init_bounded_vector init_pop;
   param_init_bounded_vector mat_a;
   param_init_bounded_vector mat_b;

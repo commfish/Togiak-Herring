@@ -151,7 +151,7 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
  model_data(argc,argv) , function_minimizer(sz)
 {
   initializationfunction();
-  init_age_3.allocate(1,myrs,5,2500,ph_Rec,"init_age_3");
+  init_age_4.allocate(1,myrs,5,2500,ph_Rec,"init_age_4");
   init_pop.allocate(1,8,1,2200,ph_Int,"init_pop");
   mat_a.allocate(1,2,5,7,ph_mat_a,"mat_a");
   mat_b.allocate(1,2,0,2,ph_mat_b,"mat_b");
@@ -338,42 +338,42 @@ void model_parameters::preliminary_calculations(void)
          mat_b(2)=1.1;
          gs_seine_a=6;
          gs_seine_b=1;
-         init_age_3(1)=	820.29;
-         init_age_3(2)=	820.29;
-         init_age_3(3)=	820.29;
-         init_age_3(4)= 325.86;
-         init_age_3(5)=	92.36;
-         init_age_3(6)=	207.91;
-         init_age_3(7)=	41.87;
-         init_age_3(8)=	173.60;
-         init_age_3(9)=	150.15;
-         init_age_3(10)=45.15;
-         init_age_3(11)=84.02;
-         init_age_3(12)=426.13;
-         init_age_3(13)=298.21;
-         init_age_3(14)=141.24;
-         init_age_3(15)=153.80;
-         init_age_3(16)=162.43;
-         init_age_3(17)=120.8;
-         init_age_3(18)=212.98;
-         init_age_3(19)=44.04;
-         init_age_3(20)=51.59;
-         init_age_3(21)=278.19;
-         init_age_3(22)=410.2;
-         init_age_3(23)=185.27;
-         init_age_3(24)=65.94;
-         init_age_3(25)=63.06;
-         init_age_3(26)=139.82;
-         init_age_3(27)=130.66;
-         init_age_3(28)=124.13;
-         init_age_3(29)=209.88;
-         init_age_3(30)=355.12;
-         init_age_3(31)=256.23;
-         init_age_3(32)=201.13;
-         init_age_3(33)=95.07;
-         init_age_3(34)=96.37;
-         init_age_3(35)=111.46;
-         init_age_3(36)=111.46;
+         init_age_4(1)=	820.29;
+         init_age_4(2)=	820.29;
+         init_age_4(3)=	820.29;
+         init_age_4(4)= 325.86;
+         init_age_4(5)=	92.36;
+         init_age_4(6)=	207.91;
+         init_age_4(7)=	41.87;
+         init_age_4(8)=	173.60;
+         init_age_4(9)=	150.15;
+         init_age_4(10)=45.15;
+         init_age_4(11)=84.02;
+         init_age_4(12)=426.13;
+         init_age_4(13)=298.21;
+         init_age_4(14)=141.24;
+         init_age_4(15)=153.80;
+         init_age_4(16)=162.43;
+         init_age_4(17)=120.8;
+         init_age_4(18)=212.98;
+         init_age_4(19)=44.04;
+         init_age_4(20)=51.59;
+         init_age_4(21)=278.19;
+         init_age_4(22)=410.2;
+         init_age_4(23)=185.27;
+         init_age_4(24)=65.94;
+         init_age_4(25)=63.06;
+         init_age_4(26)=139.82;
+         init_age_4(27)=130.66;
+         init_age_4(28)=124.13;
+         init_age_4(29)=209.88;
+         init_age_4(30)=355.12;
+         init_age_4(31)=256.23;
+         init_age_4(32)=201.13;
+         init_age_4(33)=95.07;
+         init_age_4(34)=96.37;
+         init_age_4(35)=111.46;
+         init_age_4(36)=111.46;
     init_pop(1) = 1021;
     init_pop(2) = 50;
     init_pop(3) = 24;
@@ -408,7 +408,7 @@ void model_parameters::userfunction(void)
   if(mceval_phase())
     {
      evalout<<for_mat_B_st<<" "
-          <<init_age_3<<" "
+          <<init_age_4<<" "
           <<init_pop<<" "<<endl;
     }
 }
@@ -470,7 +470,7 @@ void model_parameters::Time_Loop(void)
   //----------------------------------------------------------------------------
   for(int i=1;i<=1;i++)
    {
-        naa(i,1)=init_age_3(i);              //recruitment vector - year 1
+        naa(i,1)=init_age_4(i);              //recruitment vector - year 1
      for(int j=2;j<=nages;j++)
        {
          naa(i,j)=init_pop(j-1);              //initial population - year 1
@@ -511,7 +511,7 @@ void model_parameters::Time_Loop(void)
     {
     for(int j=2;j<=nages;j++)
       {
-      naa(i,1)=init_age_3(i);
+      naa(i,1)=init_age_4(i);
       naa(i,j)=post_naa(i-1,j-1)*Sur(j-1);  //naa: (numbers-catch)*survival
       }
     for(int j=nages;j<=nages;j++)
@@ -663,7 +663,7 @@ void model_parameters::get_FIGDATA(void)
   for (int j=1;j<=1;j++){FIGDATA(i,j)=tot_mat_B_tons(i);}// total mature biomass (tons) (Figure 1)
   for (int j=2;j<=2;j++){FIGDATA(i,j)=tot_obs_aerial_tons(i);}//total observed aerial biomass (tons) (Figure 1)
   for (int j=3;j<=3;j++){FIGDATA(i,j)=res_aerial(i);}//aerial survey residuals (Figure 4)
-  for (int j=4;j<=4;j++){FIGDATA(i,j)=init_age_3(i);}//age-3 recruit strength (Figure 5)
+  for (int j=4;j<=4;j++){FIGDATA(i,j)=init_age_4(i);}//age-3 recruit strength (Figure 5)
   for (int j=5;j<=13;j++){FIGDATA(i,j)=est_seine_comp(i,j-4);}//proportion of N selected by gear (estimated) (Figure 8)
   for (int j=14;j<=22;j++){FIGDATA(i,j)=obs_seine_comp(i+md_offset,j-13);}//observed catch compostion (Figure 8)
   for (int j=23;j<=31;j++){FIGDATA(i,j)=est_mat_comp(i,j-22);}//estimated mature  age composition (Figure 9)
@@ -681,7 +681,7 @@ void model_parameters::output_FIGDATA(void)
 {
   ofstream& evalout= *pad_evalout;
  ofstream figdata("FIGDATA.dat");
- figdata<<"tot_mat_B_tons tot_obs_aerial_tons res_aerial init_age_3 est_seine_comp4 est_seine_comp5 est_seine_comp6 est_seine_comp7 est_seine_comp8 est_seine_comp9 est_seine_comp10 est_seine_comp11 est_seine_comp12 obs_seine_comp4 obs_seine_comp5 obs_seine_comp6 obs_seine_comp7 obs_seine_comp8 obs_seine_comp9 obs_seine_comp10 obs_seine_comp11 obs_seine_comp12 est_mat_comp4 est_mat_comp5 est_mat_comp6 est_mat_comp7 est_mat_comp8 est_mat_comp9 est_mat_comp10 est_mat_comp11 est_mat_comp12 obs_mat_comp4 obs_mat_comp5 obs_mat_comp6 obs_mat_comp7 obs_mat_comp8 obs_mat_comp9 obs_mat_comp10 obs_mat_comp11 obs_mat_comp12 tot_post_N N tot_sp_N tot_mat_N tot_obs_aerial_tuned_tons threshold"<<endl;
+ figdata<<"tot_mat_B_tons tot_obs_aerial_tons res_aerial init_age_4 est_seine_comp4 est_seine_comp5 est_seine_comp6 est_seine_comp7 est_seine_comp8 est_seine_comp9 est_seine_comp10 est_seine_comp11 est_seine_comp12 obs_seine_comp4 obs_seine_comp5 obs_seine_comp6 obs_seine_comp7 obs_seine_comp8 obs_seine_comp9 obs_seine_comp10 obs_seine_comp11 obs_seine_comp12 est_mat_comp4 est_mat_comp5 est_mat_comp6 est_mat_comp7 est_mat_comp8 est_mat_comp9 est_mat_comp10 est_mat_comp11 est_mat_comp12 obs_mat_comp4 obs_mat_comp5 obs_mat_comp6 obs_mat_comp7 obs_mat_comp8 obs_mat_comp9 obs_mat_comp10 obs_mat_comp11 obs_mat_comp12 tot_post_N N tot_sp_N tot_mat_N tot_obs_aerial_tuned_tons threshold"<<endl;
  figdata<<FIGDATA<<endl;
 }
 
@@ -738,16 +738,16 @@ void model_parameters::get_report(void)
     Report<<"tot_sel_N:"<<","<<"pre-fishery numbers (naa) x gear selectivity; total abundance selected by gear (millions)"<<endl;
     Report<<"tot_mat_N:"<<","<<"Total mature abundance (millions)"<<endl;
     Report<<"tot_sel_B:"<<","<<"Observed weight-at-age x estimated age composition of catch"<<endl;
-    Report<<"init_age_3:"<<","<<"Mature and immature age-3 abundance (recruitment in milllions)"<<endl;
+    Report<<"init_age_4:"<<","<<"Mature and immature age-3 abundance (recruitment in milllions)"<<endl;
     Report<<"tot_sp_N:"<<","<<"Total spawning abundance (millions)"<<endl;
     Report<<"tot_obs_catch:"<<","<<"Total observed catch (tonnes)"<<endl;
     Report<<"tot_obs_aerial_tons:"<<","<<"Observed aerial biomass (tons)"<<endl;
     Report<<"N:"<<","<<"Pre-fishery total abundance (millions)"<<endl;
     Report<<"tot_mat_B_tons:"<<","<<"Total mature biomass (tons)"<<endl;
     Report<<"tot_post_N:"<<","<<"Post fishery total abundance (millions)"<<endl;
-    Report<<"Year"<<","<<"tot_sel_N"<<","<<"tot_mat_N"<<","<<"tot_sel_B"<<","<<"init_age_3"<<","<<"tot_sp_N"<<","<<"tot_obs_catch"<<","<<"tot_obs_aerial_tons"<<","<<"N"<<","<<"tot_mat_B_tons"<<","<<"tot_post_N"<<endl;
+    Report<<"Year"<<","<<"tot_sel_N"<<","<<"tot_mat_N"<<","<<"tot_sel_B"<<","<<"init_age_4"<<","<<"tot_sp_N"<<","<<"tot_obs_catch"<<","<<"tot_obs_aerial_tons"<<","<<"N"<<","<<"tot_mat_B_tons"<<","<<"tot_post_N"<<endl;
     for(int n; n<=vsize-2; n++)
-    Report<<Year[n+mod_syr]<<","<<tot_sel_N[n+1]<<","<<tot_mat_N[n+1]<<","<<tot_sel_B[n+1]<<","<<init_age_3[n+1]<<","<<tot_sp_N[n+1]<<","<<tot_obs_catch[n+1]<<","<<tot_obs_aerial_tons[n+1]<<","<<N[n+1]<<","<<tot_mat_B_tons[n+1]<<","<<tot_post_N[n+1]<<endl;
+    Report<<Year[n+mod_syr]<<","<<tot_sel_N[n+1]<<","<<tot_mat_N[n+1]<<","<<tot_sel_B[n+1]<<","<<init_age_4[n+1]<<","<<tot_sp_N[n+1]<<","<<tot_obs_catch[n+1]<<","<<tot_obs_aerial_tons[n+1]<<","<<N[n+1]<<","<<tot_mat_B_tons[n+1]<<","<<tot_post_N[n+1]<<endl;
     Report<<"  "<<endl;
     Report<<","<<"Age 4"<<","<<"Age 5"<<","<<"Age 6"<<","<<"Age 7"<<","<<"Age 8"<<","<<"Age 9 "<<","<<"Age 10"<<","<<"Age 11"<<","<<"Age 12+"<<endl;
     Report<<"Survival"<<","<<Sur[1]<<","<<Sur[2]<<","<<Sur[3]<<","<<Sur[4]<<","<<Sur[5]<<","<<Sur[6]<<","<<Sur[7]<<","<<Sur[8]<<","<<Sur[9]<<endl;

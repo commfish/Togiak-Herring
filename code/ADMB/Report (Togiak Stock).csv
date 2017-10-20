@@ -21,14 +21,14 @@ Forecast mature prop. at age (by biomass),0.0423962,0.0548471,0.06941,0.112571,0
 tot_sel_N:,pre-fishery numbers (naa) x gear selectivity; total abundance selected by gear (millions)
 tot_mat_N:,Total mature abundance (millions)
 tot_sel_B:,Observed weight-at-age x estimated age composition of catch
-init_age_3:,Mature and immature age-3 abundance (recruitment in milllions)
+init_age_4:,Mature and immature age-3 abundance (recruitment in milllions)
 tot_sp_N:,Total spawning abundance (millions)
 tot_obs_catch:,Total observed catch (tonnes)
 tot_obs_aerial_tons:,Observed aerial biomass (tons)
 N:,Pre-fishery total abundance (millions)
 tot_mat_B_tons:,Total mature biomass (tons)
 tot_post_N:,Post fishery total abundance (millions)
-Year,tot_sel_N,tot_mat_N,tot_sel_B,init_age_3,tot_sp_N,tot_obs_catch,tot_obs_aerial_tons,N,tot_mat_B_tons,tot_post_N
+Year,tot_sel_N,tot_mat_N,tot_sel_B,init_age_4,tot_sp_N,tot_obs_catch,tot_obs_aerial_tons,N,tot_mat_B_tons,tot_post_N
 1980,189.406,197.608,300.839,99.6091,122.843,18515,68686,429.665,64274.6,354.9
 1981,283.187,448.125,243.654,1770.66,400.619,9228,158650,2033.65,108947,1986.14
 1982,497.415,769.255,258.354,1596.83,688.762,13451,97902.8,3068.62,206133,2988.13
