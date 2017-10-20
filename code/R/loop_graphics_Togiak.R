@@ -57,12 +57,7 @@ library(latticeExtra)
 library(gridExtra)
 library(ggplot2)
 library(Hmisc)
-library(MASS)
-library(survival)
-library(scatterplot3d)
-library(vcd)
 library(grid)
-library(calibrate)
 library(scales)
 library(extrafont)
 library(xlsx)
@@ -74,57 +69,6 @@ library(cowplot)
 # Function calls
 #------------------------------------------------------------------------------
 #http://gettinggeneticsdone.blogspot.com/2010/03/arrange-multiple-ggplot2-plots-in-same.html (code to put 2 plot together)
-#setwd("S:/Region1Shared-DCF/Research/Herring-Dive Fisheries/Herring/Togiak/Togiak/ADMB 1980-2018") #set working directory ;uncomment and run to make figures for just one model
-vp.layout <- function(x, y) viewport(layout.pos.row=x, layout.pos.col=y)
-arrange_ggplot2 <- function(..., nrow=NULL, ncol=NULL, as.table=FALSE) {
-  dots <- list(...)  
-  n <- length(dots)	
-  if(is.null(nrow) & is.null(ncol)) { nrow = floor(n/2) ; ncol = ceiling(n/nrow)}	
-  if(is.null(nrow)) { nrow = ceiling(n/ncol)}	
-  if(is.null(ncol)) { ncol = ceiling(n/nrow)}        
-  #grid.Newpage()
-  pushViewport(viewport(layout=grid.layout(nrow,ncol) ) )  
-  ii.p <- 1	
-  for(ii.row in seq(1, nrow)){	
-    ii.table.row <- ii.row		
-    if(as.table) {ii.table.row <- nrow - ii.table.row + 1}		
-    for(ii.col in seq(1, ncol)){			
-      ii.table <- ii.p			
-      if(ii.p > n) break			
-      print(dots[[ii.table]], vp=vp.layout(ii.table.row, ii.col))			
-      ii.p <- ii.p + 1}}}
-
-#function to extract data from ADMB report
-reptoRlist = function(fn)
-{
-  ifile=scan(fn,what="character",flush=T,blank.lines.skip=F,quiet=T)
-  idx=sapply(as.double(ifile),is.na)
-  vnam=ifile[idx]  #list names
-  nv=length(vnam)           #number of objects
-  A=list()
-  ir=0
-  for(i in 1:nv)
-  {
-    ir=match(vnam[i],ifile)
-    if(i!=nv) irr=match(vnam[i+1],ifile) else irr=length(ifile)+1 #next row
-    dum=NA
-    if(irr-ir==2) dum=as.double(scan(fn,skip=ir,nlines=1,quiet=T,what=""))
-    if(irr-ir>2) dum=as.matrix(read.table(fn,skip=ir,nrow=irr-ir-1,fill=T))
-    
-    if(is.numeric(dum))#Logical test to ensure dealing with numbers
-    {
-      A[[ vnam[i ] ]]=dum
-    }
-  }
-  return(A)
-}
-
-A = reptoRlist(fn='model.rep') 
-
-#formatting axis function
-fmt <- function(){
-  function(x) format(x,nsmall = 2,scientific = FALSE)}
-round2<-function(x){trunc(x+0.5)} 
 ###############################################################################
 #SECTION I - Read csv files and arrange
 ###############################################################################
@@ -177,54 +121,6 @@ legend("topright",c("Survey-estimated aerial biomass","Survey-estimated aerial b
 dev.off()
 Figure_1a_data<-C
 rm (C)
-
-#------------------------------------------------------------------------------
-# Figure 1a_COMPARE: COMPARE ADMB EXCEL Survey- and model-estimated aerial survey biomass (tons).
-#------------------------------------------------------------------------------
-#excel_ASA<-c(78024,139184,223722,262314,261152,278166,266287,279280,
-#             241802,209148,179960,172472,164113,185887,195911,181635,
-#             178172,156499,152527,131194,128509,129541,132863,157712,167449,167317,
-#             170805,149536,131664,133193,147744,156786,168011,201544,202821,205488,NA)
-#y<-A$for_mat_B_st#forecast mature biomass (tons)
-#excel_pred<-201292
-#x<-subset(FIGDATA, select=c(Year, tot_obs_aerial_tons,tot_mat_B_tons, tot_obs_aerial_tuned_tons))
-#Y<-c(max(x$Year)+1)
-#B<- data.frame(Y)  
-#B["Year"]<-B$Y
-#B["tot_obs_aerial_tons"]<-0
-#B["tot_mat_B_tons"]<-0
-#B["tot_obs_aerial_tuned_tons"]<-0
-#B<-subset(B, select=c(Year, tot_obs_aerial_tons,tot_mat_B_tons,tot_obs_aerial_tuned_tons))
-#C<-rbind(x,B) #to create x axis with a greater x value than max(Year)
-#C[C==0] <- NA
-#C<-cbind(C,excel_ASA) 
-#options(scipen=999)
-#windowsFonts(A = windowsFont("Times New Roman"))
-#png(file='Figure 1a_COMPARE.png', res=200, width=8, height=4, units ="in")  
-#op <- par(family = "Times New Roman")
-#yticks <- seq(0, 400000, 50000)
-#plot(C$Year,C$tot_obs_aerial_tons,pch=21,col="black",xaxt="n", bg="blue",cex=1.2,lwd=1,
-#     ylab="Biomass (tons)",xlab="Year",#options(scipen=4),
-#     cex.axis=1.2,cex.lab=1.2, family="A",ylim=c(0, 400000))
-#lines(C$Year,C$tot_obs_aerial_tons,lty=2,lwd=1,col="black") #observed
-#lines(C$Year,C$tot_mat_B_tons,lwd=3,col="black") #predicted
-#lines(C$Year,C$excel_ASA,lwd=3,col="red") #predicted
-#points(C$Year,C$tot_mat_B_tons,pch=17,col="red", bg="black",cex=1.3) #predicted
-##points(C$Year,C$tot_obs_aerial_tons,pch=21,col="black", bg="blue", cex=1.3) #observed
-#points(C$Year,C$tot_obs_aerial_tuned_tons,pch=21,col="black", bg="green", cex=1.3) #observed
-#points(max(FIGDATA$Year)+1,y,pch=8,col="black",cex=1)
-#points(max(FIGDATA$Year)+1,excel_pred,pch=8,col="red",cex=1)
-#lines(FIGDATA$Year,FIGDATA$threshold,col="grey",lty=1, lwd=2)
-##textxy(max(FIGDATA$Year)+1, y,round2(y), pos=3, cex=0.6)
-#axis(side=1,at=seq(min(C$Year),max(C$Year),1),cex.axis=1, las=2)
-#legend("topright",c("Survey-estimated aerial biomass","Survey-estimated aerial biomass (tuned to model)","Model-estimated mature biomass (ADMB)",
-#                    "Model-estimated mature biomass (excel)",
-#                    "Mature biomass forecast (ADMB)","Mature biomass forecast (excel)", "Threshold"),
-#       pch=c(16,16, NA, NA, 8,8,NA),lty=c(2,2,1, 1,NA,NA,1), col=c("blue", "green", "black","red","black", "red","grey"),bg="black", cex=0.7, bty="n", 
-#       lwd=c(NA,NA,2, 2,NA,NA,2))
-#dev.off()
-#Figure_1a_COMPARE_data<-C
-#rm (C)
 
 #------------------------------------------------------------------------------
 # Figure 1b: Survey- and model-estimated aerial survey biomass (tons) with historical runs.
@@ -339,173 +235,6 @@ C<-subset(FIGDATA, select=c(Year, res_aerial))
 Figure_2_data<-C
 rm(B,g2a,C, cutoff)
 #------------------------------------------------------------------------------
-# Figure 3a option #1: Model estimates of age-4 recruit strength (numbers of age-4 mature 
-#             and immature fish). With Excel
-#------------------------------------------------------------------------------
-B<-subset(FIGDATA, select=c(Year, init_age_3))
-maxY<-max(B$init_age_3,na.rm=TRUE)*2
-excel_age_4<-c(164.421,
-               3651.724,
-               2917.040,
-               1079.533,
-               359.419,
-               798.478,
-               189.827,
-               671.547,
-               541.682,
-               80.097,
-               126.879,
-               1154.559,
-               825.700,
-               389.762,
-               492.481,
-               556.732,
-               407.856,
-               624.245,
-               75.819,
-               105.643,
-               793.196,
-               1136.035,
-               539.516,
-               209.324,
-               207.219,
-               420.809,
-               395.654,
-               347.952,
-               549.196,
-               944.275,
-               699.200,
-               657.464,
-               399.451,
-               577.453,
-               647.758,
-               938.195)
-C<-cbind(B,excel_age_4) 
-C <- melt(C, id=c("Year"), na.rm=TRUE)
-C$variable <- factor(C$variable, levels=c("init_age_3", "excel_age_4"))
-cbPalette <- c("#E69F00","#0072B2")
-C<- C[order(C$Year, -C$value) , ]
-C["variable"] <- ifelse(C$variable=="init_age_3","ADMB", "excel")
-
-g3<- ggplot() +
-  geom_bar(data=C, mapping=aes(x=Year, y=value, fill=variable),stat="identity",position ="dodge")+
-  scale_fill_manual(values=cbPalette)+
-  ylab("Number of age-4 recruits (millions)")+xlab("Year")+
-  theme(text=element_text(family="Times New Roman", size=12))
-
-g3 <- g3 +theme(legend.position="none") +scale_x_continuous(breaks=seq(min(B$Year),
-          max(B$Year+1),1))+coord_cartesian(ylim=c(0,maxY))+
-         theme(axis.text.x = element_text(size=14, colour="black"),
-           axis.title.x = element_text(size=14, colour="black"))+theme_bw()+
-         theme(axis.text.y = element_text(size=14,colour="black"),
-           axis.title.y = element_text(size=14,colour="black"))+
-         theme(panel.background = element_rect(colour="white"))+
-         theme(legend.position="none")+
-         theme(panel.border = element_rect(colour = "black"))
-
-g3 <- g3+theme_set(theme_bw(base_size=14,base_family='Times New Roman')+
-                   theme(panel.grid.major = element_blank(),
-                         panel.grid.minor = element_blank()))
-g3 <- g3+theme(axis.text.x=element_text(angle=-90))+theme(legend.title=element_blank())
-
-png(file='Figure 3a_option 1.png', res=200, width=10, height=6, units ="in")
-pushViewport(viewport(layout=grid.layout(1,1)))
-vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
-print(g3,vp=vplayout(1,1:1))
-dev.off()
-C<-subset(FIGDATA, select=c(Year, init_age_3))
-Figure_3_data<-C
-rm(B,g3,C, maxY)
-
-#------------------------------------------------------------------------------
-# Figure 3a option #2: Model estimates of age-4 recruit strength (numbers of age-4 mature 
-#             and immature fish). With Excel
-#------------------------------------------------------------------------------
-B<-subset(FIGDATA, select=c(Year, init_age_3))
-excel_age_4<-c(164.421,
-               3651.724,
-               2917.040,
-               1079.533,
-               359.419,
-               798.478,
-               189.827,
-               671.547,
-               541.682,
-               80.097,
-               126.879,
-               1154.559,
-               825.700,
-               389.762,
-               492.481,
-               556.732,
-               407.856,
-               624.245,
-               75.819,
-               105.643,
-               793.196,
-               1136.035,
-               539.516,
-               209.324,
-               207.219,
-               420.809,
-               395.654,
-               347.952,
-               549.196,
-               944.275,
-               699.200,
-               657.464,
-               399.451,
-               577.453,
-               647.758,
-               938.195)
-C<-cbind(B,excel_age_4) 
-maxY<-max(C$excel_age_4,na.rm=TRUE)*1.3
-
-
-g3 <- ggplot() +geom_bar(data=C, mapping=aes(x=Year, y=init_age_3),stat='identity', 
-                         position='dodge', fill="#E69F00") +
-  ylab("Number of age-4 recruits (millions)")
-
-g3 <- g3 +theme(legend.position="none") +scale_x_continuous(breaks=seq(min(B$Year),
-                                                                       max(B$Year+1),1))+coord_cartesian(ylim=c(0,maxY))+
-  theme(axis.text.x = element_text(size=14, colour="black"),
-        axis.title.x = element_text(size=14, colour="black"))+theme_bw()+
-  theme(axis.text.y = element_text(size=14,colour="black"),
-        axis.title.y = element_text(size=14,colour="black"))+
-  theme(panel.background = element_rect(colour="white"))+
-  theme(legend.position="none")+
-  theme(panel.border = element_rect(colour = "black"))
-
-g3 <- g3+theme_set(theme_bw(base_size=14,base_family='Times New Roman')+
-                     theme(panel.grid.major = element_blank(),
-                           panel.grid.minor = element_blank()))
-g3 <- g3+theme(axis.text.x=element_text(angle=-90))
-
-g4 <- ggplot() +geom_bar(data=C, mapping=aes(x=Year, y=excel_age_4),stat='identity', 
-                         position='dodge', fill="#0072B2") +ylab("Number of age-4 recruits (millions)")
-
-g4 <- g4 +theme(legend.position="none") +scale_x_continuous(breaks=seq(min(B$Year),
-                                                                       max(B$Year+1),1))+coord_cartesian(ylim=c(0,maxY))+
-  theme(axis.text.x = element_text(size=14, colour="black"),
-        axis.title.x = element_text(size=14, colour="black"))+theme_bw()+
-  theme(axis.text.y = element_text(size=14,colour="black"),
-        axis.title.y = element_text(size=14,colour="black"))+
-  theme(panel.background = element_rect(colour="white"))+
-  theme(legend.position="none")+
-  theme(panel.border = element_rect(colour = "black"))
-
-g4 <- g4+theme_set(theme_bw(base_size=14,base_family='Times New Roman')+
-                     theme(panel.grid.major = element_blank(),
-                           panel.grid.minor = element_blank()))
-g4 <- g4+theme(axis.text.x=element_text(angle=-90))
-library(grid)
-library(cowplot)
-png(file='Figure 3a_option 2.png', res=200, width=8, height=11, units ="in") 
-plot_grid(g3,g4, labels = c("ADMB", "excel"), ncol = 1, hjust=c(-1.5,-2),
-          vjust=2, label_size=14)
-dev.off()
-dev.off()
-#------------------------------------------------------------------------------
 # Figure 3b: Model estimates of age-4 recruit strength (numbers of age-4 mature 
 #             and immature fish).
 #------------------------------------------------------------------------------
@@ -618,11 +347,11 @@ rm(g4b,B,g4c,maxY)
 B<-subset(FIGDATAAGE, select=c(Age2, Survival)) #predicted
 B$Age2<-as.factor(B$Age2)
 B$Age2 <- factor(B$Age2, as.character(B$Age2))
-g5b <- ggplot() +geom_bar(data=B, mapping=aes(x=Age2, y=Survival),stat='identity', 
+g5a <- ggplot() +geom_bar(data=B, mapping=aes(x=Age2, y=Survival),stat='identity', 
                           position='dodge', fill="#56B4E9")+ylab("Proportion-at-age")+
   xlab("Age")+geom_line(data=B,aes(x=Age2,y=Survival),show.legend=FALSE,size=2,colour="black") 
 
-g5b<-g5b+coord_cartesian(ylim=c(0,1))+  
+g5a<-g5a+coord_cartesian(ylim=c(0,1))+  
   theme(axis.text.x = element_text(size=12,colour="black",family="Times New Roman"),
         axis.title.x = element_text(size=14, colour="black",family="Times New Roman"))+
   theme(axis.text.y = element_text(size=12,colour="black",family="Times New Roman"),
@@ -631,49 +360,13 @@ g5b<-g5b+coord_cartesian(ylim=c(0,1))+
   theme(strip.text.x = element_text(size=14,face="bold", family="Times New Roman"))+
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
-g5b<-g5b + ggtitle("Survival") + 
+g5a<-g5a + ggtitle("Survival") + 
   theme(plot.title = element_text(lineheight=.8, face="bold"))
 png(file='Figure 5a.png', res=200, width=9, height=6, units ="in")
 pushViewport(viewport(layout=grid.layout(1,1)))
 vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
-print(g5b,vp=vplayout(1,1:1))
+print(g5a,vp=vplayout(1,1:1))
 Figure_5a_data<-B
-dev.off()
-rm(B,g7b)
-
-#Figure 5a COMPARE: Model estimates of survival comparison
-B<-subset(FIGDATAAGE, select=c(Age2, Survival)) #predicted
-B$Age2<-as.factor(B$Age2)
-B$Age2 <- factor(B$Age2, as.character(B$Age2))
-excel_survival<-c(0.6874,0.6874,0.6874,0.6874,0.6874,0.6874,0.6874,0.6874,0.6874)
-C<-cbind(B,excel_survival) 
-C <- melt(C, id=c("Age2"), na.rm=TRUE)
-C$variable <- factor(C$variable, levels=c("Survival", "excel_survival"))
-cbPalette <- c("#E69F00","#0072B2")
-C["variable"] <- ifelse(C$variable=="Survival","ADMB", "excel")
-
-g5b<- ggplot() +
-  geom_bar(data=C, mapping=aes(x=Age2, y=value, fill=variable),stat="identity",position ="dodge")+
-  scale_fill_manual(values=cbPalette)+
-  ylab("Proportion-at-age")+xlab("Age")+
-  theme(text=element_text(family="Times New Roman", size=12))
-
-g5b<-g5b+coord_cartesian(ylim=c(0,1))+  
-  theme(axis.text.x = element_text(size=12,colour="black",family="Times New Roman"),
-        axis.title.x = element_text(size=14, colour="black",family="Times New Roman"))+
-  theme(axis.text.y = element_text(size=12,colour="black",family="Times New Roman"),
-        axis.title.y = element_text(size=14,colour="black",family="Times New Roman"))+
-  theme(plot.title=element_text(size=rel(1.5),colour="black",vjust =1))+
-  theme(strip.text.x = element_text(size=14,face="bold", family="Times New Roman"))+
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
-g5b<-g5b + ggtitle("Survival") + 
-  theme(plot.title = element_text(lineheight=.8, face="bold"))+theme(legend.title=element_blank())
-png(file='Figure 5a_compare.png', res=200, width=9, height=6, units ="in")
-pushViewport(viewport(layout=grid.layout(1,1)))
-vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
-print(g5b,vp=vplayout(1,1:1))
-Figure_5a_COMPARE_data<-B
 dev.off()
 rm(B,g7b)
 
@@ -704,14 +397,14 @@ C["Age"] <- ifelse(C$variable=="Age4","4", ifelse (C$variable=="Age5","5",
 C["MAT"]<-C$value
 C<-subset(C, select=c(Year, Age, MAT))
 C$Age <- factor(C$Age, levels=c("4", "5", "6", "7", "8", "9", "10","11", "12+"))
-g5c<-ggplot(data=C,aes(x=Age, y=MAT,fill=Age))+facet_wrap(~Year,ncol=8,as.table=TRUE)+
+g5b<-ggplot(data=C,aes(x=Age, y=MAT,fill=Age))+facet_wrap(~Year,ncol=8,as.table=TRUE)+
      geom_bar(stat="identity")+
      geom_line(data=C,aes(x=Age,y=MAT,group=Year),show.legend=FALSE,size=1,colour="black")+ 
      theme_bw()+
      xlab ("Age")+ylab("Proportion-at-age")+
      theme(text=element_text(family="Times New Roman", face="bold", size=12))
 
-g5c<-g5c+coord_cartesian(ylim=c(0,1))+
+g5b<-g5b+coord_cartesian(ylim=c(0,1))+
   theme(axis.text.x = element_text(size=8,colour="black",family="Times New Roman"),
         axis.title.x = element_text(size=14, colour="black",family="Times New Roman"))+
   theme(axis.text.y = element_text(size=12,colour="black",family="Times New Roman"),
@@ -732,24 +425,58 @@ Figure_5b_data<-C
 rm(y,B,C,g5c)
 
 # Figure 5c: Model estimates of gear selectivity at age.
-B<-subset(FIGDATAAGE, select=c(Age2, GS_seine)) #predicted
-B$Age2 <- factor(B$Age2, levels=c("4", "5", "6", "7", "8", "9", "10","11", "12+"))
+y<-as.data.frame(A$gs_seine)
+B<-subset(FIGDATA, select=c(Year)) #predicted
+C <- cbind(y,B)
+C <- merge(FIGDATA,C,by=c("Year"), all=TRUE)
+C["Age4"]<-C$V1
+C["Age5"]<-C$V2
+C["Age6"]<-C$V3
+C["Age7"]<-C$V4
+C["Age8"]<-C$V5
+C["Age9"]<-C$V6
+C["Age10"]<-C$V7
+C["Age11"]<-C$V8
+C["Age12"]<-C$V9
+C<-subset(C, select=c(Year, Age4, Age5, Age6, Age7, Age8, Age9, Age10, Age11, Age12))
+C<- melt(C, id=c("Year"), na.rm=TRUE)
+C["Age"] <- ifelse(C$variable=="Age4","4", ifelse (C$variable=="Age5","5",
+                                                   ifelse (C$variable=="Age6","6",
+                                                           ifelse (C$variable=="Age7","7",
+                                                                   ifelse (C$variable=="Age8","8",
+                                                                           ifelse (C$variable=="Age9","9",
+                                                                                   ifelse (C$variable=="Age10","10",
+                                                                                           ifelse (C$variable=="Age11","11","12+"))))))))
 
-g5a <- ggplot(data=B, mapping=aes(x=Age2, y=GS_seine))+ylab("Proportion-at-age")+
-  xlab("Age")
-g5a <- g5a+geom_bar(stat='identity', alpha=0.75, position='dodge', fill="#56B4E9")
-g5a<-g5a+coord_cartesian(ylim=c(0,1))+  
-  theme(axis.text.x = element_text(size=12,colour="black",family="Times New Roman"),
+C["GS"]<-C$value
+C<-subset(C, select=c(Year, Age, GS))
+C$Age <- factor(C$Age, levels=c("4", "5", "6", "7", "8", "9", "10","11", "12+"))
+g5c<-ggplot(data=C,aes(x=Age, y=GS,fill=Age))+facet_wrap(~Year,ncol=8,as.table=TRUE)+
+  geom_bar(stat="identity")+
+  geom_line(data=C,aes(x=Age,y=GS,group=Year),show.legend=FALSE,size=1,colour="black")+ 
+  theme_bw()+
+  xlab ("Age")+ylab("Proportion-at-age")+
+  theme(text=element_text(family="Times New Roman", face="bold", size=12))
+
+g5c<-g5c+coord_cartesian(ylim=c(0,1))+
+  theme(axis.text.x = element_text(size=8,colour="black",family="Times New Roman"),
         axis.title.x = element_text(size=14, colour="black",family="Times New Roman"))+
   theme(axis.text.y = element_text(size=12,colour="black",family="Times New Roman"),
         axis.title.y = element_text(size=14,colour="black",family="Times New Roman"))+
   theme(plot.title=element_text(size=rel(1.5),colour="black",vjust =1))+
-  theme(strip.text.x = element_text(size=14,face="bold", family="Times New Roman"))+
+  theme(strip.text.x = element_text(size=14,face="bold",family="Times New Roman"))+
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
-g5a<-g5a + ggtitle("Gear Selectivity") + 
+g5c<-g5c + ggtitle("Gear Selectivity") + 
   theme(plot.title = element_text(lineheight=.8, face="bold"))
-png(file='Figure 5c.png', res=200, width=9, height=6, units ="in")
+
+png(file='Figure 5c.png', res=200, width=11, height=6, units ="in")
+pushViewport(viewport(layout=grid.layout(1,1)))
+vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
+print(g5c,vp=vplayout(1,1:1))
+dev.off()
+Figure_5b_data<-C
+rm(y,B,C,g5c)png(file='Figure 5c.png', res=200, width=9, height=6, units ="in")
 pushViewport(viewport(layout=grid.layout(1,1)))
 vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
 print(g5a,vp=vplayout(1,1:1))

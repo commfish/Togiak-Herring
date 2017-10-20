@@ -969,7 +969,7 @@ FUNCTION get_FIGDATAAGE
 FUNCTION output_FIGDATAAGE
 
  ofstream figdataage("FIGDATAAGE.dat");
- figdataage<<"gS_seine Survival for_mat_baa for_mat_prop fw_a_a"<<endl;
+ figdataage<<"Survival for_mat_baa for_mat_prop fw_a_a"<<endl;
  figdataage<<FIGDATAAGE<<endl;
  
 FUNCTION get_report
