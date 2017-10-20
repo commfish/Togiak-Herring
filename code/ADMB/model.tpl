@@ -1073,16 +1073,6 @@ FUNCTION get_report
     Report<<Year[n+mod_syr]<<","<<est_sp_naa(n+1,1)<<","<<est_sp_naa(n+1,2)<<","<<est_sp_naa(n+1,3)<<","<<est_sp_naa(n+1,4)<<","<<est_sp_naa(n+1,5)<<","<<est_sp_naa(n+1,6)<<","<<est_sp_naa(n+1,7)<<","<<est_sp_naa(n+1,8)<<","<<est_sp_naa(n+1,9)<<endl;
     Report<<"  "<<endl;
     
-    Report<<"Pre-fishery age composition residuals; res_mat_comp"<<endl;
-    Report<<"Year"<<","<<"Age 4"<<","<<"Age 5"<<","<<"Age 6"<<","<<"Age 7"<<","<<"Age 8"<<","<<"Age 9 "<<","<<"Age 10"<<","<<"Age 11"<<","<<"Age 12+"<<endl;
-    for(int n; n<=vsize-2; n++)
-    Report<<Year[n+mod_syr]<<","<<res_mat_comp(n+1,1)<<","<<res_mat_comp(n+1,2)<<","<<res_mat_comp(n+1,3)<<","<<res_mat_comp(n+1,4)<<","<<res_mat_comp(n+1,5)<<","<<res_mat_comp(n+1,6)<<","<<res_mat_comp(n+1,7)<<","<<res_mat_comp(n+1,8)<<","<<res_mat_comp(n+1,9)<<endl;
-    Report<<"  "<<endl;
-
-    Report<<"Catch-age composition residuals; res_c_comp"<<endl;
-    Report<<"Year"<<","<<"Age 4"<<","<<"Age 5"<<","<<"Age 6"<<","<<"Age 7"<<","<<"Age 8"<<","<<"Age 9 "<<","<<"Age 10"<<","<<"Age 11"<<","<<"Age 12+"<<endl;
-    for(int n; n<=vsize-2; n++)
-    Report<<Year[n+mod_syr]<<","<<res_c_comp(n+1,1)<<","<<res_c_comp(n+1,2)<<","<<res_c_comp(n+1,3)<<","<<res_c_comp(n+1,4)<<","<<res_c_comp(n+1,5)<<","<<res_c_comp(n+1,6)<<","<<res_c_comp(n+1,7)<<","<<res_c_comp(n+1,8)<<","<<res_c_comp(n+1,9)<<endl;
     Report<<"  "<<endl;
 
     Report.close();
