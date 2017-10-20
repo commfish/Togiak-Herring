@@ -10,15 +10,6 @@
 ## -------------------------------------------------------------------------- ##
 
 
-#Year blocks in gear selectivity matrix (gs_Bk)
-2
-#Years for selectivity breaks (gs_Bk_Yrs)
-1980
-1993
-2015
-#
-
-
 #Parameter phases
 #Initial population (ph_Int)*
 1

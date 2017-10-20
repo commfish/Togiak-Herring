@@ -66,7 +66,8 @@ DATA_SECTION
 
   init_adstring DataFile;      
   init_adstring ControlFile;
-  init_adstring Graphics;    
+  init_adstring LoopFile;
+  init_adstring Graphics; 
 
   // | BaseFileName           : file prefix used for all  model output
   // | ReportFileName         : file name to which report file is printed
@@ -215,21 +216,6 @@ DATA_SECTION
   
 
   // |--------------------------------------------------------------------------|
-  // | SELECTIVITY BLOCKS FOR EARLY/LATE FISHERIES IN TOGIAK
-  // |  H:I 256:257
-  // |--------------------------------------------------------------------------|
-  // | - Changes in 1993 - currently hard-coded in TPL file
-  // | -gs_Bk      ->  number of gear selectivity blocks (1 split = 2 blocks)
-  // | -gs_Bk_Yrs  ->  specific years in which gear-selectivity-at-age changes
- 
-
-     init_number gs_Bk
-     init_vector gs_Bk_Yrs(1,gs_Bk+1)
-     vector gs_Bk_Idx(1,gs_Bk+1)
-
-
-
-  // |--------------------------------------------------------------------------|
   // | ESTIMATION PHASES                                                        |
   // |--------------------------------------------------------------------------|
   // |
@@ -296,18 +282,64 @@ DATA_SECTION
     }
 
 
+ END_CALCS
 
-   for (int i=1;i<=gs_Bk+1;i++)
+   !! ad_comm::change_datafile_name(LoopFile);
+  
+  // |--------------------------------------------------------------------------|
+  // | ARRAY LOOP INDEXING                                                      |
+  // |--------------------------------------------------------------------------|
+  // | 
+  // | These are the points at which the model allows natural mortality (M),
+  // | maturity-at-age (mat), gear selectivity-at-age (gs) to change based on
+  // | climate changes indicated by shifts in the Pacific Decadal Oscillation. 
+  // | Fecundity, at this point, remains stable with one estimate 
+  // |  
+  // | -mat_Bk     ->  number of maturity blocks (1 split = 2 blocks)
+  // | -mat_Bk_Yrs ->  specific years in which maturity-at-age changes
+ 
+
+  init_number mat_Bk
+  init_vector mat_Bk_Yrs(1,mat_Bk+1)
+  vector mat_Bk_Idx(1,mat_Bk+1)
+
+
+
+  // |--------------------------------------------------------------------------|
+  // | END OF FILE MARKER                                                       |
+  // |--------------------------------------------------------------------------|
+  init_number eof4
+
+ LOCAL_CALCS
+
+    if(eof1==42) cout << BaseFileName<<".ctl has been read correctly!"<<endl;
+    else 
+    {    
+         cout <<"|----------------------------------------------------------------------|"<<endl;   
+         cout <<"|      Red alert! Captain to bridge! The loop.ctl file is compromised!     |"<<endl;
+         cout <<"|----------------------------------------------------------------------|"<<endl; 
+	 cout <<"|      Last integer read is "<<eof4<<", but the file *should* end with 42      |"<<endl;
+         cout <<"| Please check the .ctl file for errors and make sure the above calls  |"<<endl;
+         cout <<"|              are matched exactly by the file's contents              |"<<endl;
+         cout <<"|----------------------------------------------------------------------|"<<endl;
+    exit(1); 
+    }
+
+
+
+   // | The lines below populate the indices for fecundity, mortality,
+   // | selectivity and maturity
+
+
+
+   for (int i=1;i<=mat_Bk+1;i++)
      {
-       gs_Bk_Idx(i)=gs_Bk_Yrs(i)-mod_syr+1;
+       mat_Bk_Idx(i)=mat_Bk_Yrs(i)-mod_syr+1;
      }
 
 
+
  END_CALCS
-
-
-
-
 
 PARAMETER_SECTION
 
@@ -333,8 +365,8 @@ PARAMETER_SECTION
   // |   seine selectivity is constant over all years, varying by age
   // |   early-late fishery selectivities change in 1993
 
-     init_bounded_vector mat_a(1,2,5,7,ph_mat_a)
-     init_bounded_vector mat_b(1,2,0,2,ph_mat_b)
+     init_bounded_vector mat_a(1,mat_Bk,5,7,ph_mat_a)
+     init_bounded_vector mat_b(1,mat_Bk,0,2,ph_mat_b)
      matrix maturity(1,myrs,1,nages)
 
      init_bounded_number gs_seine_a(5,7,ph_gs_a)
@@ -408,6 +440,7 @@ PARAMETER_SECTION
   // |- GHL             general harvest limit                         
 
   vector for_naa(1,nages)
+  //vector sortx(1,nages)
   vector for_mat_naa(1,nages)        
   vector for_mat_baa(1,nages)      
   vector for_mat_prop(1,nages)
@@ -454,7 +487,7 @@ PARAMETER_SECTION
   matrix res_c_comp(1,myrs,1,nages);
   matrix res_mat_comp(1,myrs,1,nages);
   vector res_aerial(1,myrs);
-
+  
   number Purse_Seine;
   number Total_Run;
   number Aerial_Biomass;
@@ -567,32 +600,25 @@ FUNCTION get_parameters
            GS_seine(j)=1;
            }
            }
-  // Early late time periods &  fix 8+=1
+  // Early late Maturity time periods &  fix 8+=1
 
-   for(int i=1;i<=myrs;i++)
-     {
-       for (int j=1;j<=4;j++)
-         {
-
-               if(i <=13) //if add more data-make sure this number is correct
-                 {
-                   maturity(i,j)=1/(1+exp(-1.0*mat_b(1)*((j+3) - mat_a(1))));
-                 }
-                else
-                 {
-               maturity(i,j)=1/(1+exp(-1.0*mat_b(2)*((j+3) - mat_a(2))));
-                 }
-             }
-         }
-
-   for(int i=1;i<=myrs;i++)
-     {
-       for (int j=5;j<=nages;j++)
-         {
-                   maturity(i,j)=1;
-                   
-                   }}
-             
+  for (int t=1;t<=mat_Bk;t++)
+  {
+    for (int i=mat_Bk_Idx(t);i<=mat_Bk_Idx(t+1);i++)
+       {
+         for (int j=1;j<=nages;j++)
+          {
+          if (j<=4)
+          {
+            maturity(i,j)=1/(1+exp(-1.0*mat_b(t)*((j+2)-mat_a(t))));
+          }
+          else
+          {
+          maturity(i,j)=1;
+          }
+       }
+   }
+  }         
   //Survival
   Sur = max_Sur;
   S_for = max_Sur;
@@ -843,10 +869,13 @@ FUNCTION evaluate_the_objective_function
 FUNCTION get_forecast
 
   for (int j=1;j<=1;j++)
-    {
-   //  for_naa(j)=(naa(myrs,j)+naa(myrs-1,j)+naa(myrs-2,j)+naa(myrs-3,j)+naa(myrs-4,j)+naa(myrs-5,j)+naa(myrs-6,j)+naa(myrs-7,j)+naa(myrs-8,j)+naa(myrs-9,j))/10; //forecast age 4 numbers;mean last 10 yrs
-       for_naa(j)=sort(naa);
-   }
+  {
+     for_naa(j)=(naa(myrs,j)+naa(myrs-1,j)+naa(myrs-2,j)+naa(myrs-3,j)+naa(myrs-4,j)+naa(myrs-5,j)+naa(myrs-6,j)+naa(myrs-7,j)+naa(myrs-8,j)+naa(myrs-9,j))/10; //forecast age 4 numbers;mean last 10 yrs
+      // sortx(j)=sort(naa(i,j));
+      //  for_naa(j) = sortx(10/2+1);      
+
+     
+  }
   for (int j=2;j<=nages-1;j++)
     {
       for_naa(j)=post_naa(myrs,j-1)*S_for;                           //forecast naa, ages 5 - 11
