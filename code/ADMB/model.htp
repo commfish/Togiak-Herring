@@ -1,0 +1,164 @@
+#if !defined(_MODEL_)
+#  define _MODEL_
+
+class model_data : public ad_comm{
+  ofstream *   pad_evalout;
+  init_adstring DataFile;
+  init_adstring ControlFile;
+  init_adstring Graphics;
+  data_int dat_syr;
+  data_int dat_nyr;
+  data_int mod_syr;
+  data_int mod_nyr;
+  data_int sage;
+  data_int nage;
+  data_int nages;
+  int rec_syr;
+  dvector age;
+  int dyrs;
+  int myrs;
+  int md_offset;
+  dvector Year;
+  int i;
+  int j;
+  data_vector threshold;
+  data_vector fw_a_a;
+  data_vector tot_obs_catch;
+  data_vector tot_obs_aerial;
+  data_vector tot_obs_aerial_tuned;
+  data_matrix obs_catch_naa;
+  data_matrix obs_c_waa;
+  data_matrix obs_seine_comp;
+  data_matrix obs_mat_comp;
+  dvector tot_obs_aerial_tons;
+  dvector tot_obs_aerial_tuned_tons;
+  data_number eof2;
+  data_number gs_Bk;
+  data_vector gs_Bk_Yrs;
+  dvector gs_Bk_Idx;
+  data_number ph_Int;
+  data_number ph_S;
+  data_number ph_mat_a;
+  data_number ph_gs_a;
+  data_number ph_gs_b;
+  data_number ph_mat_b;
+  data_number ph_Rec;
+  data_number ph_Ric;
+  data_number ph_md;
+  data_number lR;
+  data_number lM;
+  data_number lA;
+  data_vector wt_aerial;
+  data_vector wt_mat;
+  data_number eof1;
+  ~model_data();
+  model_data(int argc,char * argv[]);
+  friend class model_parameters;
+};
+
+class model_parameters : public model_data ,
+  public function_minimizer
+{
+public:
+  ~model_parameters();
+  void preliminary_calculations(void);
+  void set_runtime(void);
+  virtual void * mycast(void) {return (void*)this;}
+  static int mc_phase(void)
+  {
+    return initial_params::mc_phase;
+  }
+  static int mceval_phase(void)
+  {
+    return initial_params::mceval_phase;
+  }
+  static int sd_phase(void)
+  {
+    return initial_params::sd_phase;
+  }
+  static int current_phase(void)
+  {
+    return initial_params::current_phase;
+  }
+  static int last_phase(void)
+  {
+    return (initial_params::current_phase
+      >=initial_params::max_number_phases);
+  }
+  static prevariable current_feval(void)
+  {
+    return *objective_function_value::pobjfun;
+  }
+private:
+  ivector integer_control_flags;
+  dvector double_control_flags;
+  param_init_bounded_vector init_age_3;
+  param_init_bounded_vector init_pop;
+  param_init_bounded_vector mat_a;
+  param_init_bounded_vector mat_b;
+  param_matrix maturity;
+  param_init_bounded_number gs_seine_a;
+  param_init_bounded_number gs_seine_b;
+  param_vector GS_seine;
+  param_matrix sel_naa;
+  param_matrix mat_naa;
+  param_vector tot_sel_N;
+  param_vector tot_mat_N;
+  param_matrix sel_baa;
+  param_vector tot_sel_B;
+  param_init_bounded_number max_Sur;
+  param_init_bounded_number slope;
+  param_vector Sur;
+  param_number S_for;
+  param_matrix est_mat_baa;
+  param_vector tot_mat_B;
+  param_vector tot_mat_B_tons;
+  param_matrix naa;
+  param_matrix post_naa;
+  param_matrix est_seine_comp;
+  param_matrix est_seine_naa;
+  param_matrix est_mat_comp;
+  param_matrix est_catch_comp;
+  param_matrix est_tot_catch;
+  param_matrix est_sp_naa;
+  param_vector tot_sp_N;
+  param_vector tot_post_N;
+  param_vector N;
+  param_vector for_naa;
+  param_vector for_mat_naa;
+  param_vector for_mat_baa;
+  param_vector for_mat_prop;
+  param_vector for_mat_b_prop;
+  param_number for_mat_B;
+  param_number for_mat_B_st;
+  param_number for_tot_mat_N;
+  param_matrix FIGDATA;
+  param_matrix FIGDATAAGE;
+  param_matrix res_c_comp;
+  param_matrix res_mat_comp;
+  param_vector res_aerial;
+  param_number Purse_Seine;
+  param_number Total_Run;
+  param_number Aerial_Biomass;
+  param_number prior_function_value;
+  param_number likelihood_function_value;
+  objective_function_value f;
+public:
+  virtual void userfunction(void);
+  virtual void report(const dvector& gradients);
+  virtual void final_calcs(void);
+  model_parameters(int sz,int argc, char * argv[]);
+  virtual void initializationfunction(void){}
+  void get_parameters(void);
+  void Time_Loop(void);
+  void get_residuals(void);
+  void evaluate_the_objective_function(void);
+  void get_forecast(void);
+  void get_FIGDATA(void);
+  void output_FIGDATA(void);
+  void get_FIGDATAAGE(void);
+  void output_FIGDATAAGE(void);
+  void get_report(void);
+
+};
+#endif
