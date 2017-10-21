@@ -4,49 +4,7 @@
 # HERRING GRAPHICS FOR LOOP (some mods made from primary)
 #
 # Created and maintained by Sara Miller Alaska Department of Fish & Game 
-#  (sara.miller@alaska.gov) (August 2015)
-#
-###############################################################################
-###############################################################################
-
-
-###############################################################################
-# NOTES: 
-#  For each stock, the MAXy, axis text label size, and width and height of figure 
-#    may need to be adjusted. 
-# Mature is the same as pre-fishery and spawning is the same as post-fishery
-# SECTION I:  READ IN ADMB REPORT OUTPUT & SET UP FILES
-# SECTION II: CREATE FIGURES 
-#  Figure 1:  Survey- and model-estimated aerial survey (tons) with forecast.
-#  Figure 2:  Residuals from model fits to aerial survey.
-#  Figure 3:  Model estimates of age-4 recruit strength (numbers of age-4 mature 
-#               and immature fish).
-#  Figure 4b and 4c: Spawning population abundance (blue bars;middle figure), population abundance 
-#               (immature and spawning abundance) (blue bars;bottom figure), and 
-#               commercial fishery harvest (yellow bars) over time. The combination of 
-#               the blue and yellow bars (total height of each bar) is the 
-#               mature population abundance, or total population abundance.
-#  Figures 5a-5c:  Model estimates of gear selectivity at age (a), 
-#                    survival at age (b), and maturity at age by year (c).
-#  Figure 6:  Model-estimated seine or gillnet (red line with square points) and 
-#             Observed (bar) catch-age composition.Unless change to facet_grid, need
-#             to update ncols and nrows each year.
-#  Figure 7:  Model-Estimated cast net (red line with square points) and Observed (bar) 
-#               mature age composition (pre-fishery).Unless change to facet_grid, need
-#             to update ncols and nrows each year.
-#  Figure 8:  Projected mature biomass at age (tons) for forecast year.
-#  Figure 9a: Projected percentage of mature numbers at age for forecast year. 
-#  Figure 9b: Projected percentage of mature numbers at age for forecast year with forecasted WAG 
-#  Figure 10: Forecasted weight at age
-#  Figure 11: Mature Age Composition residuals.
-#  Figure 12: Catch age composition residuals
-#  Figure 13a-13b: Residuals (maturity and catch by year and age)
-#SECTION III: OUTPUT FILES TO ONE EXCEL WORKBOOK & FORMAT
-###############################################################################
-# Commented out because if called within the loop will clear loop script
-#  There are a number of these below; 
-# rm(list=ls(all=T))#Remove previous variables.
-
+#  (sara.miller@alaska.gov) (October 20, 2017)
 #------------------------------------------------------------------------------
 # Libraries
 #------------------------------------------------------------------------------
@@ -66,12 +24,9 @@ library(cowplot)
 # font_import() #only do this one time - it takes a while
 # loadfonts(device="win")
 # load ----
-source("code/R/functions.R")
-source("code/R/sit.gz")
-# -----------------------------------------------------------------------------
-###############################################################################
-#SECTION I - Read csv files and arrange
-###############################################################################
+source("./code/R/functions.R")
+source("./code/R/sit.gz")
+A = reptoRlist(fn='code/admb/model.rep') 
 FIGDATA<- read.csv("code/ADMB/FIGDATA.dat", header=TRUE, sep="") 
 write.csv(FIGDATA, "code/ADMB/FIGDATA.csv")  
 FIGDATA<- read.csv("code/ADMB/FIGDATA.csv", header=TRUE, stringsAsFactors = FALSE) 
@@ -82,9 +37,6 @@ write.csv(FIGDATAAGE, "code/ADMB/FIGDATAAGE.csv")
 FIGDATAAGE["Age"] <- c(4,5,6,7,8,9,10,11,12)#ages 3-12
 FIGDATAAGE["Age2"] <- ifelse(FIGDATAAGE$Age>=12,"12+",FIGDATAAGE$Age) #add ages 12+
 FIGDATAAGE["for_mat_baa_tons"]<-FIGDATAAGE$for_mat_baa/0.90718 #convert to tons
-###############################################################################
-#SECTION II -  Figures 
-###############################################################################
 #------------------------------------------------------------------------------
 # Figure 1a: Survey- and model-estimated aerial survey biomass (tons).
 #------------------------------------------------------------------------------
@@ -101,7 +53,7 @@ C<-rbind(x,B) #to create x axis with a greater x value than max(Year)
 C[C==0] <- NA
 options(scipen=999)
 windowsFonts(A = windowsFont("Times New Roman"))
-png(file='Figure 1a.png', res=200, width=8, height=4, units ="in")  
+png(file='figures/Figure 1a.png', res=200, width=8, height=4, units ="in")  
 op <- par(family = "Times New Roman")
 yticks <- seq(0, 400000, 50000)
 plot(C$Year,C$tot_obs_aerial_tons,pch=21,col="black",xaxt="n", bg="blue",cex=1.2,lwd=1,
@@ -157,7 +109,7 @@ C[C==0] <- NA
 C<-cbind(C,excel_2016, excel_2015, excel_2014) 
 
 windowsFonts(A = windowsFont("Times New Roman"))
-png(file='Figure 1b.png', res=200, width=9, height=6, units ="in")  
+png(file='figures/Figure 1b.png', res=200, width=9, height=6, units ="in")  
 op <- par(family = "Times New Roman")
 yticks <- seq(0, 500000, 50000)
 plot(C$Year,C$tot_obs_aerial_tons,pch=21,col="black",xaxt="n", bg="blue",cex=1.2,lwd=1,
@@ -225,7 +177,7 @@ g2a<-g2a + geom_hline(aes(yintercept=yintercept), data=cutoff, show.legend=FALSE
                       colour="black", size=0.55)
 g2a<-g2a+theme(axis.text.x=element_text(angle=-90))
 
-png(file='Figure 2.png', res=200, width=8, height=5, units ="in")  
+png(file='figures/Figure 2.png', res=200, width=8, height=5, units ="in")  
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(1,1)))
 vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
@@ -235,12 +187,12 @@ C<-subset(FIGDATA, select=c(Year, res_aerial))
 Figure_2_data<-C
 rm(B,g2a,C, cutoff)
 #------------------------------------------------------------------------------
-# Figure 3b: Model estimates of age-4 recruit strength (numbers of age-4 mature 
+# Figure 3: Model estimates of age-4 recruit strength (numbers of age-4 mature 
 #             and immature fish).
 #------------------------------------------------------------------------------
-B<-subset(FIGDATA, select=c(Year, init_age_3))
-maxY<-max(B$init_age_3,na.rm=TRUE)*1.3
-g3 <- ggplot() +geom_bar(data=B, mapping=aes(x=Year, y=init_age_3),stat='identity', 
+B<-subset(FIGDATA, select=c(Year, init_age_4))
+maxY<-max(B$init_age_4,na.rm=TRUE)*1.3
+g3 <- ggplot() +geom_bar(data=B, mapping=aes(x=Year, y=init_age_4),stat='identity', 
                          position='dodge', fill="#56B4E9") +
   ylab("Number of age-4 recruits (millions)")
 
@@ -259,12 +211,12 @@ g3 <- g3+theme_set(theme_bw(base_size=14,base_family='Times New Roman')+
                            panel.grid.minor = element_blank()))
 g3 <- g3+theme(axis.text.x=element_text(angle=-90))
 
-png(file='Figure 3b.png', res=200, width=10, height=6, units ="in")
+png(file='figures/Figure 3.png', res=200, width=10, height=6, units ="in")
 pushViewport(viewport(layout=grid.layout(1,1)))
 vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
 print(g3,vp=vplayout(1,1:1))
 dev.off()
-C<-subset(FIGDATA, select=c(Year, init_age_3))
+C<-subset(FIGDATA, select=c(Year, init_age_4))
 Figure_3_data<-C
 rm(B,g3,C, maxY)
 #------------------------------------------------------------------------------
@@ -275,7 +227,7 @@ rm(B,g3,C, maxY)
 # mature biomass, mature population abundance, or total population abundance.
 #------------------------------------------------------------------------------
 #detach(package:Hmisc, unload = TRUE)
-png(file='Figure 4.png', res=200, width=13, height=10, units ="in") 
+png(file='figures/Figure 4.png', res=200, width=13, height=10, units ="in") 
 B<-subset(FIGDATA, select=c(Year, N, tot_post_N)) 
 B["Catch"]<-B$N-B$tot_post_N
 B["postfishery"]<-B$tot_post_N
@@ -362,7 +314,7 @@ g5a<-g5a+coord_cartesian(ylim=c(0,1))+
         panel.grid.minor = element_blank())
 g5a<-g5a + ggtitle("Survival") + 
   theme(plot.title = element_text(lineheight=.8, face="bold"))
-png(file='Figure 5a.png', res=200, width=9, height=6, units ="in")
+png(file='figures/Figure 5a.png', res=200, width=9, height=6, units ="in")
 pushViewport(viewport(layout=grid.layout(1,1)))
 vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
 print(g5a,vp=vplayout(1,1:1))
@@ -416,7 +368,7 @@ g5b<-g5b+coord_cartesian(ylim=c(0,1))+
 g5c<-g5c + ggtitle("Maturity") + 
   theme(plot.title = element_text(lineheight=.8, face="bold"))
 
-png(file='Figure 5b.png', res=200, width=11, height=6, units ="in")
+png(file='figures/Figure 5b.png', res=200, width=11, height=6, units ="in")
 pushViewport(viewport(layout=grid.layout(1,1)))
 vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
 print(g5c,vp=vplayout(1,1:1))
@@ -470,7 +422,7 @@ g5c<-g5c+coord_cartesian(ylim=c(0,1))+
 g5c<-g5c + ggtitle("Gear Selectivity") + 
   theme(plot.title = element_text(lineheight=.8, face="bold"))
 
-png(file='Figure 5c.png', res=200, width=11, height=6, units ="in")
+png(file='figures/Figure 5c.png', res=200, width=11, height=6, units ="in")
 pushViewport(viewport(layout=grid.layout(1,1)))
 vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
 print(g5c,vp=vplayout(1,1:1))
@@ -575,7 +527,7 @@ g6<-g6+coord_cartesian(ylim=c(0,0.75))+
   theme(panel.grid.major = element_blank(),
       panel.grid.minor = element_blank())
 
-png(file='Figure 6.png', res=200, width=15, height=7, units ="in")
+png(file='figures/Figure 6.png', res=200, width=15, height=7, units ="in")
 pushViewport(viewport(layout=grid.layout(1,1)))
 vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
 print(g6,vp=vplayout(1,1:1))
@@ -674,7 +626,7 @@ g7<-g7+coord_cartesian(ylim=c(0,0.75))+
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
 
-png(file='Figure 7.png', res=200, width=15, height=7, units ="in")
+png(file='figures/Figure 7.png', res=200, width=15, height=7, units ="in")
 pushViewport(viewport(layout=grid.layout(1,1)))
 vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
 print(g7,vp=vplayout(1,1:1))
@@ -719,13 +671,13 @@ B$Age <- factor(B$Age, levels=c("4", "5", "6", "7", "8", "9", "10","11", "12+"))
 
 p6 <- ggplot(B, aes(x = B$Year, y = B$Age, size = B$OBS)) +
   geom_point(shape = 21, colour = "#000000", fill = "#40b8d0") 
-p6 <- p6 + scale_x_continuous(breaks = seq(1980, 2015, 1))+ggtitle("Age Composition (pre-fishery)") +
+p6 <- p6 + scale_x_continuous(breaks = seq(1980, 2017, 1))+ggtitle("Age Composition (pre-fishery)") +
   labs(x = "Year", y = "Age") +theme(legend.position="none",panel.grid.major = element_blank(),plot.title = element_text(hjust = 0.5),
 panel.grid.minor = element_blank(),
 panel.background = element_blank(),axis.line = element_line(size=1, colour = "black"))
 p6<-p6 + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-png(file='Figure 7a.png', res=200, width=9, height=6, units ="in")
+png(file='figures/Figure 7a.png', res=200, width=9, height=6, units ="in")
 pushViewport(viewport(layout=grid.layout(1,1)))
 vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
 print(p6,vp=vplayout(1,1:1))
@@ -737,8 +689,7 @@ rm(B)
 # Figure 7b: Mature age composition by year (bubble plots) 15+
 #------------------------------------------------------------------------------
 # detach(package:Hmisc, unload = TRUE)
-
-B<- read.csv("obs_mat_comp_15plus.csv", header=TRUE, stringsAsFactors = FALSE) 
+B<- read.csv("data/obs_mat_comp_15plus.csv", header=TRUE, stringsAsFactors = FALSE) 
 B[B==-9] <- NA
 B<- melt(B, id=c("Year"), na.rm=TRUE)
 B["Age"] <- ifelse(B$variable=="Age4","4", ifelse (B$variable=="Age5","5",
@@ -759,13 +710,13 @@ B$Age <- factor(B$Age, levels=c("4", "5", "6", "7", "8", "9", "10","11", "12","1
 
 p6 <- ggplot(B, aes(x = B$Year, y = B$Age, size = B$OBS)) +
   geom_point(shape = 21, colour = "#000000", fill = "#40b8d0") 
-p6 <- p6 + scale_x_continuous(breaks = seq(1980, 2015, 1))+ggtitle("Age Composition (pre-fishery)") +
+p6 <- p6 + scale_x_continuous(breaks = seq(1980, 2017, 1))+ggtitle("Age Composition (pre-fishery)") +
   labs(x = "Year", y = "Age") +theme(legend.position="none",panel.grid.major = element_blank(),plot.title = element_text(hjust = 0.5),
                                      panel.grid.minor = element_blank(),
                                      panel.background = element_blank(),axis.line = element_line(size=1, colour = "black"))
 p6<-p6 + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-png(file='Figure 7b.png', res=200, width=9, height=6, units ="in")
+png(file='figures/Figure 7b.png', res=200, width=9, height=6, units ="in")
 pushViewport(viewport(layout=grid.layout(1,1)))
 vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
 print(p6,vp=vplayout(1,1:1))
@@ -803,7 +754,7 @@ g8<-g8 + theme(legend.position="none")+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
-png(file='Figure 8.png', res=200, width=6, height=4, units ="in")
+png(file='figures/Figure 8.png', res=200, width=6, height=4, units ="in")
 pushViewport(viewport(layout=grid.layout(1,1)))
 vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
 print(g8,vp=vplayout(1,1:1))
@@ -853,7 +804,7 @@ g9<-g9+coord_cartesian(ylim=c(0,30))+
   theme(strip.text.x = element_text(size=14,face="bold",family="Times New Roman"))+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
-png(file='Figure 9a.png', res=200, width=6, height=4, units ="in")
+png(file='figures/Figure 9a.png', res=200, width=6, height=4, units ="in")
 pushViewport(viewport(layout=grid.layout(1,1)))
 vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
 print(g9,vp=vplayout(1,1:1))
@@ -894,7 +845,7 @@ g9<-g9+coord_cartesian(ylim=c(0,30))+
   theme(strip.text.x = element_text(size=14,face="bold",family="Times New Roman"))+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
-png(file='Figure 9b.png', res=200, width=6, height=4, units ="in")
+png(file='figures/Figure 9b.png', res=200, width=6, height=4, units ="in")
 pushViewport(viewport(layout=grid.layout(1,1)))
 vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
 print(g9,vp=vplayout(1,1:1))
@@ -928,7 +879,7 @@ g10<-g10 + theme(legend.position="none")+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
-png(file='Figure 10.png', res=200, width=6, height=4, units ="in")
+png(file='figures/Figure 10.png', res=200, width=6, height=4, units ="in")
 pushViewport(viewport(layout=grid.layout(1,1)))
 vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
 print(g10,vp=vplayout(1,1:1))
@@ -984,7 +935,7 @@ g11<-g11+ theme(axis.text.x = element_text(size=10,colour="black", family="Times
     theme(strip.text.x = element_text(size=14,face="bold", family="Times New Roman"))+theme(legend.position="none")+
     theme(panel.grid.major = element_blank(),panel.grid.minor = element_blank())
 
-png(file='Figure 11.png', res=200, width=10, height=9, units ="in")
+png(file='figures/Figure 11.png', res=200, width=10, height=9, units ="in")
 pushViewport(viewport(layout=grid.layout(1,1)))
 vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
 print(g11,vp=vplayout(1,1:1))
@@ -1038,7 +989,7 @@ g12<-g12+ theme(axis.text.x = element_text(size=10,colour="black", family="Times
   theme(strip.text.x = element_text(size=14,face="bold", family="Times New Roman"))+theme(legend.position="none")+
   theme(panel.grid.major = element_blank(),panel.grid.minor = element_blank())
 
-png(file='Figure 12.png', res=200, width=10, height=9, units ="in")
+png(file='figures/Figure 12.png', res=200, width=10, height=9, units ="in")
 pushViewport(viewport(layout=grid.layout(1,1)))
 vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
 print(g12,vp=vplayout(1,1:1))
@@ -1049,7 +1000,7 @@ rm(x,y,C,g12)
 #------------------------------------------------------------------------------
 # Figure 13a: Spawning age composition figure for model analysis only.
 #------------------------------------------------------------------------------
-source("sit.gz")
+
 my.col <- colorRampPalette(brewer.pal(9,"RdYlGn"))
 
 # THESE COMMANDS CAN BE RUN AND THE COLOR SCHEME MODIFIED; IF SO, THEN I'D
@@ -1069,7 +1020,7 @@ colnames(temp)<-c(paste('Age',4:11,sep=' '), "Age 12+","Year")
 temp<-subset(temp,select=c("Year", "Age 4", "Age 5", "Age 6","Age 7","Age 8", "Age 9","Age 10","Age 11","Age 12+"))
 
 # plot temp with colorbar, display Correlation in (top, left) cell
-png(file='Figure 13a.png', res=200, width=9, height=9, units ="in")
+png(file='figures/Figure 13a.png', res=200, width=9, height=9, units ="in")
 plot.table(temp, smain='Maturity Residuals', highlight = TRUE, colorbar = TRUE)
 
 dev.off()
@@ -1096,7 +1047,7 @@ colnames(temp)<-c(paste('Age',4:11,sep=' '), "Age 12+","Year")
 temp<-subset(temp,select=c("Year", "Age 4", "Age 5", "Age 6","Age 7","Age 8", "Age 9","Age 10","Age 11","Age 12+"))
 
 # plot temp with colorbar, display Correlation in (top, left) cell
-png(file='Figure 13b.png', res=200, width=9, height=9, units ="in")
+png(file='figures/Figure 13b.png', res=200, width=9, height=9, units ="in")
 plot.table(temp, smain='Catch Residuals', highlight = TRUE, colorbar = TRUE)
 
 dev.off()
