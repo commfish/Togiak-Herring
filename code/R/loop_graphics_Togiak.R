@@ -65,20 +65,20 @@ library(RColorBrewer)
 library(cowplot)
 # font_import() #only do this one time - it takes a while
 # loadfonts(device="win")
+# load ----
+source("code/R/functions.R")
+source("code/R/sit.gz")
 # -----------------------------------------------------------------------------
-# Function calls
-#------------------------------------------------------------------------------
-#http://gettinggeneticsdone.blogspot.com/2010/03/arrange-multiple-ggplot2-plots-in-same.html (code to put 2 plot together)
 ###############################################################################
 #SECTION I - Read csv files and arrange
 ###############################################################################
-FIGDATA<- read.csv("FIGDATA.dat", header=TRUE, sep="") 
-write.csv(FIGDATA, "FIGDATA.csv")  
-FIGDATA<- read.csv("FIGDATA.csv", header=TRUE, stringsAsFactors = FALSE) 
+FIGDATA<- read.csv("code/ADMB/FIGDATA.dat", header=TRUE, sep="") 
+write.csv(FIGDATA, "code/ADMB/FIGDATA.csv")  
+FIGDATA<- read.csv("code/ADMB/FIGDATA.csv", header=TRUE, stringsAsFactors = FALSE) 
 FIGDATA[FIGDATA==-9] <- NA
 FIGDATA["Year"]<-seq(1980,2017,by=1) #model years
-FIGDATAAGE<- read.csv("FIGDATAAGE.dat", header=TRUE, sep="") 
-write.csv(FIGDATAAGE, "FIGDATAAGE.csv")  
+FIGDATAAGE<- read.csv("code/ADMB/FIGDATAAGE.dat", header=TRUE, sep="") 
+write.csv(FIGDATAAGE, "code/ADMB/FIGDATAAGE.csv")  
 FIGDATAAGE["Age"] <- c(4,5,6,7,8,9,10,11,12)#ages 3-12
 FIGDATAAGE["Age2"] <- ifelse(FIGDATAAGE$Age>=12,"12+",FIGDATAAGE$Age) #add ages 12+
 FIGDATAAGE["for_mat_baa_tons"]<-FIGDATAAGE$for_mat_baa/0.90718 #convert to tons

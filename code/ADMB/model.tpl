@@ -469,7 +469,7 @@ PARAMETER_SECTION
   // |- FIGDATA2
 
    matrix FIGDATA(1,myrs,1,46)
-   matrix FIGDATAAGE(1,nages,1,5)
+   matrix FIGDATAAGE(1,nages,1,4)
 
   // |---------------------------------------------------------------------------------|
   // | OBJECTIVE FUNCTION COMPONENTS
@@ -831,10 +831,16 @@ FUNCTION get_residuals
     {
       for (int j=1;j<=nages;j++)
         {
+         if (obs_seine_comp(i,j)<0)
+            {
+              res_c_comp(i,j)=0;
+            }
+            else
+            {
                res_c_comp(i,j)=obs_seine_comp(i,j)-est_seine_comp(i,j);
              }
         }
-   
+   }
 
   //----------------------------------------------------------------------------
   // MATURE AGE COMPOSITION--Total Run
@@ -844,12 +850,17 @@ FUNCTION get_residuals
     {
      for (int j=1;j<=nages;j++)
        {
-            
+         if (obs_mat_comp(i,j)<0)
+            {
+              res_mat_comp(i,j)=0;
+            }
+            else
+            {
               res_mat_comp(i,j)=(obs_mat_comp(i,j)-est_mat_comp(i,j))*wt_mat(i);
             
        }
     }
-
+  }
 
 
   //----------------------------------------------------------------------------
