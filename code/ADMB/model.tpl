@@ -893,12 +893,11 @@ FUNCTION evaluate_the_objective_function
   f=Purse_Seine+Total_Run+Aerial_Biomass;
 
 FUNCTION get_forecast
-
+  //insert median code here for for_naa
   for (int j=1;j<=1;j++)
   {
      for_naa(j)=(naa(myrs,j)+naa(myrs-1,j)+naa(myrs-2,j)+naa(myrs-3,j)+naa(myrs-4,j)+naa(myrs-5,j)+naa(myrs-6,j)+naa(myrs-7,j)+naa(myrs-8,j)+naa(myrs-9,j))/10; //forecast age 4 numbers;mean last 10 yrs
-      // sortx(j)=sort(naa(i,j));
-      //  for_naa(j) = sortx(10/2+1);      
+
 
      
   }
