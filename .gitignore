@@ -9,3 +9,5 @@
 .*Rproj
 *.csv
 *.png
+.FIGDATA.dat
+.FIGDATAAGE.dat
