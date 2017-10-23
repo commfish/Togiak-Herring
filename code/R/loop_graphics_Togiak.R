@@ -293,7 +293,7 @@ vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
 print(g5a,vp=vplayout(1,1:1))
 Figure_5a_data<-B
 dev.off()
-rm(B,g7b)
+rm(B,g5a)
 
 #Figure 5b: Model estimates of maturity
 y<-as.data.frame(A$maturity)
@@ -338,16 +338,16 @@ g5b<-g5b+coord_cartesian(ylim=c(0,1))+
   theme(strip.text.x = element_text(size=14,face="bold",family="Times New Roman"))+
   theme(panel.grid.major = element_blank(),
       panel.grid.minor = element_blank())
-g5c<-g5c + ggtitle("Maturity") + 
+g5b<-g5b + ggtitle("Maturity") + 
   theme(plot.title = element_text(lineheight=.8, face="bold"))
 
 png(file='figures/Figure 5b.png', res=200, width=11, height=6, units ="in")
 pushViewport(viewport(layout=grid.layout(1,1)))
 vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
-print(g5c,vp=vplayout(1,1:1))
+print(g5b,vp=vplayout(1,1:1))
 dev.off()
 Figure_5b_data<-C
-rm(y,B,C,g5c)
+rm(y,B,C,g5b)
 
 # Figure 5c: Model estimates of gear selectivity at age.
 y<-as.data.frame(A$gs_seine)
@@ -400,14 +400,8 @@ pushViewport(viewport(layout=grid.layout(1,1)))
 vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
 print(g5c,vp=vplayout(1,1:1))
 dev.off()
-Figure_5b_data<-C
-rm(y,B,C,g5c)png(file='Figure 5c.png', res=200, width=9, height=6, units ="in")
-pushViewport(viewport(layout=grid.layout(1,1)))
-vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
-print(g5a,vp=vplayout(1,1:1))
 Figure_5c_data<-B
-dev.off()
-rm(B,C,y,g7a)
+rm(B,C,y,g5c)
 #------------------------------------------------------------------------------
 # Figure 6: Observed seine  (bar) and model-estimated (red line with square points) 
 #catch-age composition.
@@ -656,7 +650,7 @@ vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
 print(p6,vp=vplayout(1,1:1))
 dev.off()
 
-rm(B)
+rm(B, p6)
 
 #------------------------------------------------------------------------------
 # Figure 7b: Mature age composition by year (bubble plots) 15+
@@ -695,7 +689,7 @@ vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
 print(p6,vp=vplayout(1,1:1))
 dev.off()
 
-rm(B)
+rm(B,p6)
 
 #------------------------------------------------------------------------------
 # Figure 8: Projected mature biomass at age (tons) for forecast year.
@@ -742,6 +736,8 @@ rm(MAXy,g8)
 # *Check to make sure that the numbers on top of bar sum to 100!!!!
 #------------------------------------------------------------------------------
 #detach(package:Hmisc, unload = TRUE)
+for_seine_weighted<-round(A$for_seine_weighted,0)
+for_mat_weighted<-round(A$for_mat_weighted,0)
 FIGDATAAGE["fw_a_a"]<-round(FIGDATAAGE$fw_a_a,0)
 FIGDATAAGE$Age2<-as.factor(FIGDATAAGE$Age2)
 FIGDATAAGE$Age2 <- factor(FIGDATAAGE$Age2, as.character(FIGDATAAGE$Age2))
@@ -767,8 +763,6 @@ g9<-ggplot(C, aes(x=Age2, y=Percentage2*100, fill=Age)) +
   geom_bar(stat="identity",position="dodge")
 g9<-g9+scale_fill_manual(values=c("#FF0000","#3A5FCD", "#3A5FCD", "#3A5FCD","#3A5FCD", "#3A5FCD","#3A5FCD", "#3A5FCD", "#3A5FCD"))
 g9<-g9+coord_cartesian(ylim=c(0,30))+
-  geom_text(data=C,aes(label=paste(C$fw_a_a, "g", sep=""),cex=1),
-            vjust=-1, family="Times New Roman") + #add prop. on top of bars
   theme(axis.text.x = element_text(size=14,colour="black",family="Times New Roman"),
         axis.title.x = element_text(size=14, colour="black",family="Times New Roman"))+
   theme(axis.text.y = element_text(size=14,colour="black",family="Times New Roman"),
@@ -777,6 +771,13 @@ g9<-g9+coord_cartesian(ylim=c(0,30))+
   theme(strip.text.x = element_text(size=14,face="bold",family="Times New Roman"))+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
+g9<-g9+geom_text(aes(x = 4, y=max(C$Percentage2*150),
+    label=paste("Forecasted weight of the mature population=",for_mat_weighted,"g", sep=""), cex=0.2),
+    family="Times New Roman")
+g9<-g9+geom_text(aes(x = 4, y=max(C$Percentage2*140),
+    label=paste("Forecasted weight of the purse seine harvest=",for_seine_weighted,"g", sep=""), cex=0.2),
+    family="Times New Roman")
+
 png(file='figures/Figure 9a.png', res=200, width=6, height=4, units ="in")
 pushViewport(viewport(layout=grid.layout(1,1)))
 vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)

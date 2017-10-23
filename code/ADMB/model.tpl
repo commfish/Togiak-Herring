@@ -458,8 +458,8 @@ PARAMETER_SECTION
   // |- tot_post_N   total population [mature+ immature] - catch [millions]
   // |- N            total abundance (mature + immature)         [millions]
   // |- tot_sp_N     total spawning abundance                    [millions]
-  // |- est_sp_naa     spawning numbers-at-age[millions]
-  // |- tot_mat_B     tota mature biomass [tonnes]
+  // |- est_sp_naa   spawning numbers-at-age[millions]
+  // |- tot_mat_B    total mature biomass [tonnes]
      init_bounded_number max_Sur(0.5,1)
      init_bounded_number slope(0.01,1)
      vector Sur(1,nages)
@@ -490,24 +490,26 @@ PARAMETER_SECTION
   // |- for_mat_baa     forecast mature biomass-at-age                     [metric tons]  
   // |- for_mat_prop    forecast mature proportion-at-age [by number]      [proportion]
   // |- for_mat_b_prop  forecast mature proportion-at-age [by biomass]      [proportion]
+  // |- for_mat_w  forecast mature proportion-at-age [by biomass]      [proportion]
+  // |- for_seine_w  Forecasted weight of the purse seine harvest    
   // |- for_mat_B       total forecast mature biomass                      [metric tons]
   // |- for_mat_B_st    total forecast mature biomass            [short dweeby US tons]  
   // |- for_tot_mat_N   total mature numbers-at-age                   
-  // |- HR              harvest rate                                 
-  // |- HR_p            harvest rate sliding proportion               
-  // |- GHL             general harvest limit                         
+  // |- for_mat_weighted   Forecasted weight of the mature population                     
+  // |- for_seine_weighted   Forecasted weight of the purse seine harvest 
   
-
   vector for_naa(1,nages)
   vector for_mat_naa(1,nages)        
   vector for_mat_baa(1,nages)      
   vector for_mat_prop(1,nages)
   vector for_mat_b_prop(1,nages)
+  vector for_mat_w(1,nages)
+  vector for_seine_w(1,nages)
   number for_mat_B                  
   number for_mat_B_st		  
   number for_tot_mat_N
-                 
-
+  number for_mat_weighted           
+  number for_seine_weighted
 
    // |---------------------------------------------------------------------------------|
   // | GRAPHICAL CONSTRUCTS
@@ -516,7 +518,6 @@ PARAMETER_SECTION
   // |- These matrices are read in R for standardized graphical analyses and figures
   // |- FIGDATA
   // |- FIGDATAAGE
-  // |- FIGDATA2
 
    matrix FIGDATA(1,myrs,1,51)
    matrix FIGDATAAGE(1,nages,1,4)
@@ -946,7 +947,7 @@ FUNCTION get_forecast
 
   for (int j=1;j<=1;j++)
   {
-//     for_naa(j)=(naa(myrs,j)+naa(myrs-1,j)+naa(myrs-2,j)+naa(myrs-3,j)+naa(myrs-4,j)+naa//(myrs-5,j)+naa(myrs-6,j)+naa(myrs-7,j)+naa(myrs-8,j)+naa(myrs-9,j))/10; //forecast age 4 //numbers;mean last 10 yrs
+    for_naa(j)=(naa(myrs,j)+naa(myrs-1,j)+naa(myrs-2,j)+naa(myrs-3,j)+naa(myrs-4,j)+naa(myrs-5,j)+naa(myrs-6,j)+naa(myrs-7,j)+naa(myrs-8,j)+naa(myrs-9,j))/10; //forecast age 4 //numbers;mean last 10 yrs
    }
   for (int j=2;j<=nages-1;j++)
     {
@@ -977,8 +978,16 @@ FUNCTION get_forecast
     {
       for_mat_prop(j)=for_mat_naa(j)/for_tot_mat_N;  //forecast % mature at age
     }
-
-
+  for (int j=1;j<=nages;j++)
+    {
+      for_mat_w(j)=for_mat_prop(j)*fw_a_a(j);  //forecast weight of the mature pop.
+    }
+      for_mat_weighted=sum(for_mat_w);
+  for (int j=1;j<=nages;j++)
+    {
+      for_seine_w(j)=est_seine_comp(myrs,j)*fw_a_a(j);  //forecast weight of the mature pop.
+    }
+      for_seine_weighted=sum(for_seine_w);
 
   for (int j=1;j<=nages;j++)
     {
@@ -1257,7 +1266,8 @@ REPORT_SECTION
   REPORT(yminusthreeFOR);
   REPORT(yminustwoFOR);
   REPORT(yminusoneFOR);
-  
+  REPORT(for_mat_weighted);
+  REPORT(for_seine_weighted);
 	//  Print run time statistics to the screen.
 	time(&finish);
 	elapsed_time=difftime(finish,start);
