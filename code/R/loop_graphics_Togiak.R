@@ -77,70 +77,43 @@ rm (C)
 #------------------------------------------------------------------------------
 # Figure 1b: Survey- and model-estimated aerial survey biomass (tons) with historical runs.
 #------------------------------------------------------------------------------
-excel_2016<-c(77980,135211,209852,254955,267237,327852,340136,350373, 288862,
-              241975,205330,197715,193639,175370,193292,179832, 175108,154537,148286,122684,
-              116472,125157,137273,163266,165144, 162426,167738, 149640,133204,135304,155786,166383,
-              174124,200752,190640,178368,NA,NA,NA)
-excel_2016_pred<-162244
-excel_2015<-c(58888,109638,197028,274969,315702,385749,
-              398561,415923,351064,301590,259619,244676,233700,192144,201351,
-              183803,175855,152810,146454,123202,120139,131665,140088,160914,
-              160237,156850,159776,141509,128276,134670, 157687,167234,171880,
-              194771,181296,NA,NA,NA,NA)
-excel_2015_pred<-163480
-excel_2014<-c(57682,109128,196858,274695,314097,381140,392668,
-              410451,347585,299163,258337,243909,233392,192006,201513,183058,175017,152349,
-              146437,123387,120141,131167,140202,161616,160528,156462,
-              159718,142351,129926,137082,160164,166664,163898,176898,NA,NA,NA,NA,NA)
-excel_2014_pred<-157448
-excel_2017_pred<-130852
 y<-A$for_mat_B_st#forecast mature biomass (tons)
-
-x<-subset(FIGDATA, select=c(Year, tot_obs_aerial_tons,tot_mat_B_tons, tot_obs_aerial_tuned_tons))
-Y<-c(max(x$Year)+1)
-B<- data.frame(Y)  
-B["Year"]<-B$Y
-B["tot_obs_aerial_tons"]<-0
-B["tot_mat_B_tons"]<-0
-B["tot_obs_aerial_tuned_tons"]<-0
-B<-subset(B, select=c(Year, tot_obs_aerial_tons,tot_mat_B_tons,tot_obs_aerial_tuned_tons))
-C<-rbind(x,B) #to create x axis with a greater x value than max(Year)
-C[C==0] <- NA
-C<-cbind(C,excel_2016, excel_2015, excel_2014) 
+x<-subset(FIGDATA, select=c(Year, tot_obs_aerial_tons,tot_mat_B_tons, tot_obs_aerial_tuned_tons,
+                            yminusfour, yminusthree, yminustwo, yminusone,threshold))
+x[x==0] <- NA
 
 windowsFonts(A = windowsFont("Times New Roman"))
 png(file='figures/Figure 1b.png', res=200, width=9, height=6, units ="in")  
 op <- par(family = "Times New Roman")
 yticks <- seq(0, 500000, 50000)
-plot(C$Year,C$tot_obs_aerial_tons,pch=21,col="black",xaxt="n", bg="blue",cex=1.2,lwd=1,
-     ylab="Biomass (tons)",xlab="Year",#options(scipen=4),
+plot(x$Year,x$tot_obs_aerial_tons,pch=21,col="black",xaxt="n", bg="blue",cex=1.2,lwd=1,
+     ylab="Biomass (tons)",xlab="Year", xaxt="n",
      cex.axis=1.2,cex.lab=1.2, family="A",ylim=c(0, 500000))
-lines(C$Year,C$tot_obs_aerial_tons,lty=2,lwd=1,col="black") #observed
-lines(C$Year,C$tot_mat_B_tons,lwd=2,col="black") #predicted
-lines(C$Year,C$excel_2016,lwd=2,col="purple") #predicted
-lines(C$Year,C$excel_2015,lwd=2,col="red") #predicted
-lines(C$Year,C$excel_2014,lwd=2,col="orange") #predicted
-points(C$Year,C$tot_obs_aerial_tons,pch=21,col="black", bg="blue", cex=1) #observed
-points(C$Year,C$tot_obs_aerial_tuned_tons,pch=21,col="black", bg="green", cex=1) #observed
-points(max(FIGDATA$Year)+1,y,pch=8,col="black",cex=1)
-points(max(FIGDATA$Year)-1,excel_2016_pred,pch=8,col="purple",cex=1)
-points(max(FIGDATA$Year)-2,excel_2015_pred,pch=8,col="red",cex=1)
-points(max(FIGDATA$Year)-3,excel_2014_pred,pch=8,col="orange",cex=1)
-points(max(FIGDATA$Year),excel_2017_pred,pch=8,col="blue",cex=1)
-lines(FIGDATA$Year+1,FIGDATA$threshold,col="grey",lty=1, lwd=2)
-#textxy(max(FIGDATA$Year)+1, y,round2(y), pos=3, cex=0.6)
+lines(x$Year,x$tot_obs_aerial_tons,lty=2,lwd=1,col="black") #observed
+lines(x$Year,x$tot_mat_B_tons,lwd=2,col="black") #predicted
+lines(x$Year,x$yminustwo,lwd=2,col="purple") #predicted
+lines(x$Year,x$yminusthree,lwd=2,col="red") #predicted
+lines(x$Year,x$yminusfour,lwd=2,col="orange") #predicted
+points(x$Year,x$tot_obs_aerial_tons,pch=21,col="black", bg="blue", cex=1) #observed
+points(x$Year,x$tot_obs_aerial_tuned_tons,pch=21,col="black", bg="green", cex=1) #observed
+points(max(x$Year)+1,y,pch=8,col="black",cex=1)
+points(max(x$Year)-1,A$yminustwoFOR,pch=8,col="purple",cex=1)
+points(max(x$Year)-2,A$yminusthreeFOR,pch=8,col="red",cex=1)
+points(max(x$Year)-3,A$yminusfourFOR,pch=8,col="orange",cex=1)
+points(max(x$Year),A$yminusoneFOR,pch=8,col="blue",cex=1)
+lines(x$Year+1,x$threshold,col="grey",lty=1, lwd=2)
 axis(side=1,at=seq(min(C$Year),max(C$Year)+1,1),cex.axis=1, las=2)
 legend("topright",c("Survey-estimated aerial biomass",
                     "Survey-estimated aerial biomass (tuned to model)",
-                    "2018 Model-estimated (ADMB)",
-                    "2018 forecast (ADMB)",
-                    "2017 forecast (excel)",
-                    "2016 Model estimated (excel)",
-                    "2016 forecast (excel)",
-                    "2015 Model estimated (excel)",
-                    "2015 forecast (excel)",
-                    "2014 Model estimated (excel)",
-                    "2014 forecast (excel)",
+                    "2018 Model-estimated",
+                    "2018 forecast",
+                    "2017 forecast",
+                    "2016 Model estimated",
+                    "2016 forecast",
+                    "2015 Model estimated",
+                    "2015 forecast",
+                    "2014 Model estimated",
+                    "2014 forecast",
                     "Threshold"),
        pch=c(16,16, NA, 8, 8, NA,8,NA,8,NA,8,NA),
        lty=c(NA,NA,1,NA,NA,1,NA,1,NA,1,NA,1), 
@@ -148,8 +121,8 @@ legend("topright",c("Survey-estimated aerial biomass",
              "red", "orange", "orange","grey"),bg="black", cex=0.75, bty="n",
        lwd=1)
 dev.off()
-Figure_1b_data<-C
-rm (C)
+Figure_1b_data<-x
+rm (x)
 #------------------------------------------------------------------------------
 # Figure 2: Residuals from model fits to aerial survey biomass
 #------------------------------------------------------------------------------
