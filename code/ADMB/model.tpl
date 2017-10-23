@@ -245,7 +245,6 @@ DATA_SECTION
   init_number ph_Ric
   init_number ph_md		
 
-
   // |--------------------------------------------------------------------------|
   // | OBJECTIVE FUNCTION WEIGHTS                                               |
   // |--------------------------------------------------------------------------|
@@ -349,6 +348,57 @@ DATA_SECTION
 
 
  END_CALCS
+ // |--------------------------------------------------------------------------|
+  // | HISTORICAL ESTIMATES FROM GRAPHICS FILE                                  |
+  // |--------------------------------------------------------------------------|
+  // | This calls the graphics file that holds historical model estimates
+  // | for the R graphics template
+  // | THis file will be updated each year (by you!)
+
+  !! ad_comm::change_datafile_name(Graphics);
+
+  // |--------------------------------------------------------------------------|
+  // | GRAPHICS CONTENTS                                                        |
+  // |--------------------------------------------------------------------------|
+  // |-model years
+  // |-yminusfour        -> ASA model (pre-fishery biomass) four years ago
+  // |-yminusthree       -> ASA model (pre-fishery biomass) three years ago
+  // |-yminustwo         -> ASA model (pre-fishery biomass) two years ago
+  // |-yminusone         -> ASA model (pre-fishery biomass) one year ago
+  // |-yminusfourFOR    -> pre-biomass forecast (short tons) four years ago
+  // |-yminusthreeFOR    -> pre-biomass forecast (short tons) three years ago
+  // |-yminustwoFOR      -> pre-biomass forecast (short tons) two years ago
+  // |-yminusoneFOR      -> pre-biomass forecast (short tons) one year ago
+  // | 
+  init_vector mod_yrs(1,myrs)
+  init_vector yminusfour(1,myrs)
+  init_vector yminusthree(1,myrs)
+  init_vector yminustwo(1,myrs)
+  init_vector yminusone(1,myrs) 
+  init_number yminusfourFOR
+  init_number yminusthreeFOR
+  init_number yminustwoFOR
+  init_number yminusoneFOR
+  init_number eof3
+
+ LOCAL_CALCS
+
+    if(eof3==42) cout << BaseFileName<<"_graphics.ctl has been read correctly!"<<endl;
+    else 
+    {       
+         cout <<"|----------------------------------------------------------------------|"<<endl;   
+         cout <<"|   Red alert! Captain to bridge! The graphics file is compromised!    |"<<endl;
+         cout <<"|----------------------------------------------------------------------|"<<endl; 
+	 cout <<"|      Last integer read is "<<eof3<<", but the file *should* end with 42      |"<<endl;
+         cout <<"|  Please check the graphics file for errors and make sure the above   |"<<endl;
+         cout <<"|          calls are matched exactly by the file's contents            |"<<endl;
+         cout <<"|----------------------------------------------------------------------|"<<endl;
+    exit(1); 
+    }
+
+   
+ END_CALCS
+
 
 PARAMETER_SECTION
 
@@ -401,7 +451,6 @@ PARAMETER_SECTION
      matrix sel_baa(1,myrs,1,nages)
      vector tot_sel_B(1,myrs)
 
-    
 
   // |---------------------------------------------------------------------------------|
   // | ESTIMATED AND DERIVED POPULATION MATRICES
@@ -447,6 +496,7 @@ PARAMETER_SECTION
   // |- HR              harvest rate                                 
   // |- HR_p            harvest rate sliding proportion               
   // |- GHL             general harvest limit                         
+  
 
   vector for_naa(1,nages)
   vector for_mat_naa(1,nages)        
@@ -468,7 +518,7 @@ PARAMETER_SECTION
   // |- FIGDATAAGE
   // |- FIGDATA2
 
-   matrix FIGDATA(1,myrs,1,46)
+   matrix FIGDATA(1,myrs,1,51)
    matrix FIGDATAAGE(1,nages,1,4)
 
   // |---------------------------------------------------------------------------------|
@@ -565,7 +615,6 @@ PRELIMINARY_CALCS_SECTION
     
 
 PROCEDURE_SECTION
-
   get_parameters();
   Time_Loop();
   get_residuals();
@@ -894,13 +943,11 @@ FUNCTION evaluate_the_objective_function
 
 FUNCTION get_forecast
   //insert median code here for for_naa
+
   for (int j=1;j<=1;j++)
   {
-     for_naa(j)=(naa(myrs,j)+naa(myrs-1,j)+naa(myrs-2,j)+naa(myrs-3,j)+naa(myrs-4,j)+naa(myrs-5,j)+naa(myrs-6,j)+naa(myrs-7,j)+naa(myrs-8,j)+naa(myrs-9,j))/10; //forecast age 4 numbers;mean last 10 yrs
-
-
-     
-  }
+//     for_naa(j)=(naa(myrs,j)+naa(myrs-1,j)+naa(myrs-2,j)+naa(myrs-3,j)+naa(myrs-4,j)+naa//(myrs-5,j)+naa(myrs-6,j)+naa(myrs-7,j)+naa(myrs-8,j)+naa(myrs-9,j))/10; //forecast age 4 //numbers;mean last 10 yrs
+   }
   for (int j=2;j<=nages-1;j++)
     {
       for_naa(j)=post_naa(myrs,j-1)*S_for;                           //forecast naa, ages 5 - 11
@@ -943,26 +990,31 @@ FUNCTION get_forecast
 FUNCTION get_FIGDATA
   FIGDATA.initialize();
   for (int i=1;i<=myrs;i++){
-  for (int j=1;j<=1;j++){FIGDATA(i,j)=tot_mat_B_tons(i);}// total mature biomass (tons) (Figure 1)
-  for (int j=2;j<=2;j++){FIGDATA(i,j)=tot_obs_aerial_tons(i);}//total observed aerial biomass (tons) (Figure 1)
-  for (int j=3;j<=3;j++){FIGDATA(i,j)=res_aerial(i);}//aerial survey residuals (Figure 4)
-  for (int j=4;j<=4;j++){FIGDATA(i,j)=init_age_4(i);}//age-3 recruit strength (Figure 5)
-  for (int j=5;j<=13;j++){FIGDATA(i,j)=est_seine_comp(i,j-4);}//proportion of N selected by gear (estimated) (Figure 8)
-  for (int j=14;j<=22;j++){FIGDATA(i,j)=obs_seine_comp(i+md_offset,j-13);}//observed catch compostion (Figure 8)
-  for (int j=23;j<=31;j++){FIGDATA(i,j)=est_mat_comp(i,j-22);}//estimated mature  age composition (Figure 9)
-  for (int j=32;j<=40;j++){FIGDATA(i,j)=obs_mat_comp(i+md_offset,j-31);}//observed mature  age composition (Figure 9)
-  for (int j=41;j<=41;j++){FIGDATA(i,j)=tot_post_N(i);}// total population [mature+ immature] - catch [millions](Figure 6)    
-  for (int j=42;j<=42;j++){FIGDATA(i,j)=N(i);}// total abundance (mature + immature [millions] (Figure 6)
-  for (int j=43;j<=43;j++){FIGDATA(i,j)=tot_sp_N(i);} // total spawning abundance [millions](Figure 6)
-  for (int j=44;j<=44;j++){FIGDATA(i,j)=tot_mat_N(i);} // total mature abundance[millions] (Figure 6)
-  for (int j=45;j<=45;j++){FIGDATA(i,j)=tot_obs_aerial_tuned_tons(i);} // total observed aerial biomass-tuned to model (tons) (Figure 1)
-  for (int j=46;j<=46;j++){FIGDATA(i,j)=threshold(i);} // threshold
-  }
+  for (int j=1;j<=1;j++){FIGDATA(i,j)=tot_mat_B_tons(i);}// total mature biomass (tons) 
+  for (int j=2;j<=2;j++){FIGDATA(i,j)=tot_obs_aerial_tons(i);}//total observed aerial biomass (tons) 
+  for (int j=3;j<=3;j++){FIGDATA(i,j)=res_aerial(i);}//aerial survey residuals 
+  for (int j=4;j<=4;j++){FIGDATA(i,j)=init_age_4(i);}//age-3 recruit strength 
+  for (int j=5;j<=13;j++){FIGDATA(i,j)=est_seine_comp(i,j-4);}//proportion of N selected by gear (estimated) 
+  for (int j=14;j<=22;j++){FIGDATA(i,j)=obs_seine_comp(i+md_offset,j-13);}//observed catch compostion
+  for (int j=23;j<=31;j++){FIGDATA(i,j)=est_mat_comp(i,j-22);}//estimated mature  age composition 
+  for (int j=32;j<=40;j++){FIGDATA(i,j)=obs_mat_comp(i+md_offset,j-31);}//observed mature  age composition 
+  for (int j=41;j<=41;j++){FIGDATA(i,j)=tot_post_N(i);}// total population [mature+ immature] - catch [millions]   
+  for (int j=42;j<=42;j++){FIGDATA(i,j)=N(i);}// total abundance (mature + immature [millions] 
+  for (int j=43;j<=43;j++){FIGDATA(i,j)=tot_sp_N(i);} // total spawning abundance [millions]
+  for (int j=44;j<=44;j++){FIGDATA(i,j)=tot_mat_N(i);} // total mature abundance[millions] 
+  for (int j=45;j<=45;j++){FIGDATA(i,j)=tot_obs_aerial_tuned_tons(i);} // total observed aerial biomass-tuned to model (tons) 
+  for (int j=46;j<=46;j++){FIGDATA(i,j)=threshold(i);}// threshold
+  for (int j=47;j<=47;j++){FIGDATA(i,j)=yminusfour(i);} //mature biomass (tons) 
+  for (int j=48;j<=48;j++){FIGDATA(i,j)=yminusthree(i);} //mature biomass (tons) 
+  for (int j=49;j<=49;j++){FIGDATA(i,j)=yminustwo(i);} //mature biomass (tons) 
+  for (int j=50;j<=50;j++){FIGDATA(i,j)=yminusone(i);} //mature biomass  (tons)
+  for (int j=51;j<=51;j++){FIGDATA(i,j)=mod_yrs(i);}}//model years
+
 
 FUNCTION output_FIGDATA
 
  ofstream figdata("FIGDATA.dat");
- figdata<<"tot_mat_B_tons tot_obs_aerial_tons res_aerial init_age_4 est_seine_comp4 est_seine_comp5 est_seine_comp6 est_seine_comp7 est_seine_comp8 est_seine_comp9 est_seine_comp10 est_seine_comp11 est_seine_comp12 obs_seine_comp4 obs_seine_comp5 obs_seine_comp6 obs_seine_comp7 obs_seine_comp8 obs_seine_comp9 obs_seine_comp10 obs_seine_comp11 obs_seine_comp12 est_mat_comp4 est_mat_comp5 est_mat_comp6 est_mat_comp7 est_mat_comp8 est_mat_comp9 est_mat_comp10 est_mat_comp11 est_mat_comp12 obs_mat_comp4 obs_mat_comp5 obs_mat_comp6 obs_mat_comp7 obs_mat_comp8 obs_mat_comp9 obs_mat_comp10 obs_mat_comp11 obs_mat_comp12 tot_post_N N tot_sp_N tot_mat_N tot_obs_aerial_tuned_tons threshold"<<endl;
+ figdata<<"tot_mat_B_tons tot_obs_aerial_tons res_aerial init_age_4 est_seine_comp4 est_seine_comp5 est_seine_comp6 est_seine_comp7 est_seine_comp8 est_seine_comp9 est_seine_comp10 est_seine_comp11 est_seine_comp12 obs_seine_comp4 obs_seine_comp5 obs_seine_comp6 obs_seine_comp7 obs_seine_comp8 obs_seine_comp9 obs_seine_comp10 obs_seine_comp11 obs_seine_comp12 est_mat_comp4 est_mat_comp5 est_mat_comp6 est_mat_comp7 est_mat_comp8 est_mat_comp9 est_mat_comp10 est_mat_comp11 est_mat_comp12 obs_mat_comp4 obs_mat_comp5 obs_mat_comp6 obs_mat_comp7 obs_mat_comp8 obs_mat_comp9 obs_mat_comp10 obs_mat_comp11 obs_mat_comp12 tot_post_N N tot_sp_N tot_mat_N tot_obs_aerial_tuned_tons threshold yminusfour yminusthree yminustwo yminusone Year"<<endl;
  figdata<<FIGDATA<<endl;
 
 FUNCTION get_FIGDATAAGE
@@ -1099,7 +1151,6 @@ FUNCTION get_report
     Report<<"  "<<endl;
 
     Report.close();
- 
 
 RUNTIME_SECTION
   maximum_function_evaluations 5000 5000 5000 5000
@@ -1202,8 +1253,11 @@ REPORT_SECTION
   REPORT(for_mat_B);
   REPORT(for_mat_B_st);
   REPORT(for_tot_mat_N);
- 
-
+  REPORT(yminusfourFOR);
+  REPORT(yminusthreeFOR);
+  REPORT(yminustwoFOR);
+  REPORT(yminusoneFOR);
+  
 	//  Print run time statistics to the screen.
 	time(&finish);
 	elapsed_time=difftime(finish,start);
