@@ -18,5 +18,5 @@ Age-structured Togiak herring stock assessment for forecasting biomass.
 -[x] Survival; Estimate max survival then linear slope decline (current method) and estimate one survival across all years and ages. 
 -[ ] For 2018 forecast, estimate survival both ways (linear and non-linear) in model and compare model output by fit criterion (AICc)
 -[x] Estimate gear selectivity as matrix in model instead of vectors
--[ ] Estimate survival as matrix in model instead of vectors
+-[x] Estimate survival as matrix in model instead of vectors
 -[x] Add past forecasts to graphics file
