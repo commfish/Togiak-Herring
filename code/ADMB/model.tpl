@@ -226,13 +226,11 @@ DATA_SECTION
   // | A parameter with a negative phase is not estimated.
   // |
   // | Phase 1: -ph_Int    -> initial population
-  // |          -ph_S      -> natural mortality (ph_Sur_a; ph_Sur_b)
+  // |          -ph_S      -> natural mortality 
   // |          -ph_mat_a  -> maturity inflection
   // |          -ph_gs_a   -> gear selectivity inflection
-  // |          -ph_Sur_a   -> gear selectivity slope
   // | Phase 2: -ph_mat_b  -> maturity slope
   // |          -ph_gs_b   -> gear selectivity slope
-  // |          -ph_Sur_b  -> Survival slope
   // | Phase 3: -ph_Rec    -> recruitment (age 3)
   // |          -ph_Ric    -> Ricker function
   // |          -ph_md    -> mile-days  coefficient
@@ -241,10 +239,8 @@ DATA_SECTION
   init_number ph_S
   init_number ph_mat_a
   init_number ph_gs_a
-  init_number ph_Sur_a
   init_number ph_mat_b
-  init_number ph_gs_a
-  init_number ph_Sur_b
+  init_number ph_gs_b
   init_number ph_Rec
   init_number ph_Ric
   init_number ph_md		
@@ -412,7 +408,7 @@ PARAMETER_SECTION
   // | INITIAL POPULATION PARAMETERS
   // |---------------------------------------------------------------------------------|
   // | 
-  // |- initial age 3 abundance
+  // |- initial age 4 abundance
   // |- initial population abundance (ages 4 - 12+)
 	
      init_bounded_vector init_age_4(1,myrs,5,2500,ph_Rec)
@@ -429,7 +425,6 @@ PARAMETER_SECTION
   // | - Note that there are THREE selectivity values: early, late, and seine
   // |   seine selectivity is constant over all years, varying by age
   // |   early-late fishery selectivities change in 1993
-  // |  -linear regression for survival
 
      init_bounded_vector mat_a(1,mat_Bk,1,10,ph_mat_a)
      init_bounded_vector mat_b(1,mat_Bk,0,5,ph_mat_b)
@@ -438,10 +433,6 @@ PARAMETER_SECTION
      init_bounded_vector gs_a(1,gs_Bk,2,10,ph_mat_a)
      init_bounded_vector gs_b(1,gs_Bk,0,5,ph_mat_b)
      matrix gs_seine(1,myrs,1,nages)
-     
-     init_bounded_number Sur_a (0,1,ph_Sur_a)
-     init_bounded_number Sur_b (0, 0.20, ph_Sur_b)
-     vector Sur (1,nages)
 
 
   // |---------------------------------------------------------------------------------|
@@ -472,9 +463,9 @@ PARAMETER_SECTION
   // |- est_sp_naa   spawning numbers-at-age[millions]
   // |- tot_mat_B    total mature biomass [tonnes]
   
-     init_bounded_number max_Sur(0.5,1)
-     init_bounded_number slope(0.01,1)
-     //vector Sur(1,nages) //One survival across ages
+     init_bounded_number max_Sur(0.5,1) //linear regression survival
+     init_bounded_number slope(0.01,1)  //linear regression survival
+     vector Sur(1,nages)
      number S_for
      
      matrix est_mat_baa(1,myrs,1,nages)
@@ -698,10 +689,26 @@ FUNCTION get_parameters
        }
    }
   }         
-  //Survival
-  Sur = max_Sur;
-  S_for = max_Sur;
 
+
+  //Survival (linear regression)
+    for (int j=1;j<=nages;j++)
+    {
+    if (j<=5)
+     {
+     Sur(j)=max_Sur;
+     }
+      else
+      {
+      Sur(j) = max_Sur - slope*((j+3)-(8));
+     }
+     }
+
+  S_for = max_Sur;
+  
+  //Survival (uncomment next two lines for one survival across all ages)
+  //Sur = max_Sur;
+  //S_for = max_Sur;
 
 FUNCTION Time_Loop
 
@@ -1280,6 +1287,9 @@ REPORT_SECTION
   REPORT(yminusoneFOR);
   REPORT(for_mat_weighted);
   REPORT(for_seine_weighted);
+  REPORT(max_Sur);
+  REPORT(slope);
+  
 	//  Print run time statistics to the screen.
 	time(&finish);
 	elapsed_time=difftime(finish,start);
