@@ -226,11 +226,13 @@ DATA_SECTION
   // | A parameter with a negative phase is not estimated.
   // |
   // | Phase 1: -ph_Int    -> initial population
-  // |          -ph_S      -> natural mortality
+  // |          -ph_S      -> natural mortality (ph_Sur_a; ph_Sur_b)
   // |          -ph_mat_a  -> maturity inflection
   // |          -ph_gs_a   -> gear selectivity inflection
-  // |          -ph_gs_b   -> gear selectivity slope
+  // |          -ph_Sur_a   -> gear selectivity slope
   // | Phase 2: -ph_mat_b  -> maturity slope
+  // |          -ph_gs_b   -> gear selectivity slope
+  // |          -ph_Sur_b  -> Survival slope
   // | Phase 3: -ph_Rec    -> recruitment (age 3)
   // |          -ph_Ric    -> Ricker function
   // |          -ph_md    -> mile-days  coefficient
@@ -239,11 +241,15 @@ DATA_SECTION
   init_number ph_S
   init_number ph_mat_a
   init_number ph_gs_a
-  init_number ph_gs_b
+  init_number ph_Sur_a
   init_number ph_mat_b
+  init_number ph_gs_a
+  init_number ph_Sur_b
   init_number ph_Rec
   init_number ph_Ric
   init_number ph_md		
+
+  
 
   // |--------------------------------------------------------------------------|
   // | OBJECTIVE FUNCTION WEIGHTS                                               |
@@ -423,6 +429,7 @@ PARAMETER_SECTION
   // | - Note that there are THREE selectivity values: early, late, and seine
   // |   seine selectivity is constant over all years, varying by age
   // |   early-late fishery selectivities change in 1993
+  // |  -linear regression for survival
 
      init_bounded_vector mat_a(1,mat_Bk,1,10,ph_mat_a)
      init_bounded_vector mat_b(1,mat_Bk,0,5,ph_mat_b)
@@ -431,6 +438,10 @@ PARAMETER_SECTION
      init_bounded_vector gs_a(1,gs_Bk,2,10,ph_mat_a)
      init_bounded_vector gs_b(1,gs_Bk,0,5,ph_mat_b)
      matrix gs_seine(1,myrs,1,nages)
+     
+     init_bounded_number Sur_a (0,1,ph_Sur_a)
+     init_bounded_number Sur_b (0, 0.20, ph_Sur_b)
+     vector Sur (1,nages)
 
 
   // |---------------------------------------------------------------------------------|
@@ -460,9 +471,10 @@ PARAMETER_SECTION
   // |- tot_sp_N     total spawning abundance                    [millions]
   // |- est_sp_naa   spawning numbers-at-age[millions]
   // |- tot_mat_B    total mature biomass [tonnes]
+  
      init_bounded_number max_Sur(0.5,1)
      init_bounded_number slope(0.01,1)
-     vector Sur(1,nages)
+     //vector Sur(1,nages) //One survival across ages
      number S_for
      
      matrix est_mat_baa(1,myrs,1,nages)
