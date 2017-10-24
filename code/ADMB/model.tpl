@@ -226,21 +226,23 @@ DATA_SECTION
   // | A parameter with a negative phase is not estimated.
   // |
   // | Phase 1: -ph_Int    -> initial population
-  // |          -ph_S      -> natural mortality 
   // |          -ph_mat_a  -> maturity inflection
   // |          -ph_gs_a   -> gear selectivity inflection
+  // |          -ph_Sur_a   -> surviva inflection
   // | Phase 2: -ph_mat_b  -> maturity slope
   // |          -ph_gs_b   -> gear selectivity slope
+  // |          -ph_Sur_b   -> survival slope
   // | Phase 3: -ph_Rec    -> recruitment (age 3)
   // |          -ph_Ric    -> Ricker function
   // |          -ph_md    -> mile-days  coefficient
 
   init_number ph_Int
-  init_number ph_S
   init_number ph_mat_a
   init_number ph_gs_a
+  init_number ph_Sur_a
   init_number ph_mat_b
   init_number ph_gs_b
+  init_number ph_Sur_b
   init_number ph_Rec
   init_number ph_Ric
   init_number ph_md		
@@ -300,6 +302,8 @@ DATA_SECTION
   // | -mat_Bk_Yrs ->  specific years in which maturity-at-age changes
   // | -gs_Bk      ->  number of gear selectivity blocks (1 split = 2 blocks)
   // | -gs_Bk_Yrs  ->  specific years in which gear-selectivity-at-age changes
+  // | -M_Bk       ->  number of mortality blocks (1 split = 2 blocks)
+  // | -M_Bk_Yrs   ->  specific years in which mortality M changes
 
 
   init_number mat_Bk
@@ -309,6 +313,10 @@ DATA_SECTION
   init_number gs_Bk
   init_vector gs_Bk_Yrs(1,gs_Bk+1)
   vector gs_Bk_Idx(1,gs_Bk+1)
+  
+  init_number S_Bk
+  init_vector S_Bk_Yrs(1,S_Bk+1)
+  vector S_Bk_Idx(1,S_Bk+1)
 
 
   // |--------------------------------------------------------------------------|
@@ -333,10 +341,7 @@ DATA_SECTION
 
 
 
-   // | The lines below populate the indices for fecundity, mortality,
-   // | selectivity and maturity
-
-
+   // | The lines below populate the indices for maturity, selectivity, and survival,
 
    for (int i=1;i<=mat_Bk+1;i++)
      {
@@ -346,6 +351,10 @@ DATA_SECTION
    for (int i=1;i<=gs_Bk+1;i++)
      {
        gs_Bk_Idx(i)=gs_Bk_Yrs(i)-mod_syr+1;
+     }
+   for (int i=1;i<=S_Bk+1;i++)
+     {
+       S_Bk_Idx(i)=S_Bk_Yrs(i)-mod_syr+1;
      }
 
 
@@ -430,11 +439,15 @@ PARAMETER_SECTION
      init_bounded_vector mat_b(1,mat_Bk,0,5,ph_mat_b)
      matrix maturity(1,myrs,1,nages)
 
-     init_bounded_vector gs_a(1,gs_Bk,2,10,ph_mat_a)
+     init_bounded_vector gs_a(1,gs_Bk,1,10,ph_mat_a)
      init_bounded_vector gs_b(1,gs_Bk,0,5,ph_mat_b)
      matrix gs_seine(1,myrs,1,nages)
+  
+     init_bounded_vector Sur_a(1,S_Bk,0.3,1,ph_Sur_a) //linear regression survival
+     init_bounded_vector Sur_b(1,S_Bk,0.01,0.2,ph_Sur_b)  //linear regression survival
+     matrix Sur(1,myrs,1,nages)    
 
-
+     
   // |---------------------------------------------------------------------------------|
   // | Summations of estimated catch at age
   // |  AC56:AC93
@@ -463,10 +476,7 @@ PARAMETER_SECTION
   // |- est_sp_naa   spawning numbers-at-age[millions]
   // |- tot_mat_B    total mature biomass [tonnes]
   
-     init_bounded_number max_Sur(0.5,1) //linear regression survival
-     init_bounded_number slope(0.01,1)  //linear regression survival
-     vector Sur(1,nages)
-     number S_for
+
      
      matrix est_mat_baa(1,myrs,1,nages)
      vector tot_mat_B(1,myrs)
@@ -523,7 +533,7 @@ PARAMETER_SECTION
   // |- FIGDATAAGE
 
    matrix FIGDATA(1,myrs,1,51)
-   matrix FIGDATAAGE(1,nages,1,4)
+   matrix FIGDATAAGE(1,nages,1,3)
 
   // |---------------------------------------------------------------------------------|
   // | OBJECTIVE FUNCTION COMPONENTS
@@ -570,6 +580,8 @@ PRELIMINARY_CALCS_SECTION
          mat_b(2)=1.1;
          gs_a=6;
          gs_b=1;
+         Sur_a=0.8;
+         Sur_b=0.01;
 
          init_age_4(1)=	820.29;
          init_age_4(2)=	820.29;
@@ -649,7 +661,6 @@ FUNCTION get_parameters
   maturity.initialize();
   gs_seine.initialize();
   Sur.initialize();
-  S_for.initialize();
 
   // Seine fishery-unconstrained then fix at age 9
 
@@ -692,22 +703,27 @@ FUNCTION get_parameters
 
 
   //Survival (linear regression)
-    for (int j=1;j<=nages;j++)
-    {
-    if (j<=5)
-     {
-     Sur(j)=max_Sur;
-     }
-      else
-      {
-      Sur(j) = max_Sur - slope*((j+3)-(8));
-     }
-     }
-
-  S_for = max_Sur;
+   for (int t=1;t<=S_Bk;t++)
+  {
+    for (int i=S_Bk_Idx(t);i<=S_Bk_Idx(t+1);i++)
+       {
+         for (int j=1;j<=nages;j++)
+          {
+          if (j<=5)
+          {
+            Sur(i,j)=Sur_a(t);
+          }
+          else
+          {
+          Sur(i,j) = Sur_a(t) - Sur_b(t)*((j+3)-(8));
+          }
+       }
+   }
+  }         
+ 
   
   //Survival (uncomment next two lines for one survival across all ages)
-  //Sur = max_Sur;
+  //Sur(i,j) = max_Sur;
   //S_for = max_Sur;
 
 FUNCTION Time_Loop
@@ -798,12 +814,12 @@ FUNCTION Time_Loop
     for(int j=2;j<=nages;j++)
       {
       naa(i,1)=init_age_4(i);
-      naa(i,j)=post_naa(i-1,j-1)*Sur(j-1);  //naa: (numbers-catch)*survival
+      naa(i,j)=post_naa(i-1,j-1)*Sur(i-1,j-1);  //naa: (numbers-catch)*survival
       }
       
     for(int j=nages;j<=nages;j++)
       {
-        naa(i,j)=post_naa(i-1,j-1)*Sur(j-1)+post_naa(i-1,j)*Sur(j); //+ class, naa
+        naa(i,j)=post_naa(i-1,j-1)*Sur(i-1,j-1)+post_naa(i-1,j)*Sur(i-1,j); //+ class, naa
       }
 
 
@@ -970,12 +986,12 @@ FUNCTION get_forecast
    }
   for (int j=2;j<=nages-1;j++)
     {
-      for_naa(j)=post_naa(myrs,j-1)*S_for;                           //forecast naa, ages 5 - 11
+      for_naa(j)=post_naa(myrs,j-1)*Sur(myrs,j-1);                           //forecast naa, ages 5 - 11
     }
 
   for (int j=nages;j<=nages;j++)
     {
-      for_naa(j)=post_naa(myrs,j-1)*S_for+post_naa(myrs,j)*S_for;    //forecast naa, age 12+
+      for_naa(j)=post_naa(myrs,j-1)*Sur(myrs,j-1)+post_naa(myrs,j)*Sur(myrs,j);    //forecast naa, age 12+
     }
 
 
@@ -1048,18 +1064,16 @@ FUNCTION output_FIGDATA
 FUNCTION get_FIGDATAAGE
   FIGDATAAGE.initialize();
   for (int i=1;i<=nages;i++){
- //Survival
-  for (int j=1;j<=1;j++){FIGDATAAGE(i,j)=Sur(i);}
  //Mature biomass at age (forecasted; metric tons)
-  for (int j=2;j<=2;j++){FIGDATAAGE(i,j)=for_mat_baa(i);}
+  for (int j=1;j<=1;j++){FIGDATAAGE(i,j)=for_mat_baa(i);}
  //Mature biomass at age (forecasted; metric tons)
-  for (int j=3;j<=3;j++){FIGDATAAGE(i,j)=for_mat_prop(i);}
+  for (int j=2;j<=2;j++){FIGDATAAGE(i,j)=for_mat_prop(i);}
  //Forecasted weight at age
-  for (int j=4;j<=4;j++){FIGDATAAGE(i,j)=fw_a_a(i);}}
+  for (int j=3;j<=3;j++){FIGDATAAGE(i,j)=fw_a_a(i);}}
 FUNCTION output_FIGDATAAGE
 
  ofstream figdataage("FIGDATAAGE.dat");
- figdataage<<"Survival for_mat_baa for_mat_prop fw_a_a"<<endl;
+ figdataage<<"for_mat_baa for_mat_prop fw_a_a"<<endl;
  figdataage<<FIGDATAAGE<<endl;
  
 FUNCTION get_report
@@ -1108,10 +1122,6 @@ FUNCTION get_report
     Report<<Year[n+mod_syr]<<","<<tot_sel_N[n+1]<<","<<tot_mat_N[n+1]<<","<<tot_sel_B[n+1]<<","<<init_age_4[n+1]<<","<<tot_sp_N[n+1]<<","<<tot_obs_catch[n+1]<<","<<tot_obs_aerial_tons[n+1]<<","<<N[n+1]<<","<<tot_mat_B_tons[n+1]<<","<<tot_post_N[n+1]<<endl;
     Report<<"  "<<endl;
 
-    Report<<","<<"Age 4"<<","<<"Age 5"<<","<<"Age 6"<<","<<"Age 7"<<","<<"Age 8"<<","<<"Age 9 "<<","<<"Age 10"<<","<<"Age 11"<<","<<"Age 12+"<<endl;
-    Report<<"Survival"<<","<<Sur[1]<<","<<Sur[2]<<","<<Sur[3]<<","<<Sur[4]<<","<<Sur[5]<<","<<Sur[6]<<","<<Sur[7]<<","<<Sur[8]<<","<<Sur[9]<<endl;
-    Report<<"  "<<endl;
-
     Report<<"Gear Selectivity"<<endl;
     Report<<"Year"<<","<<"Age 4"<<","<<"Age 5"<<","<<"Age 6"<<","<<"Age 7"<<","<<"Age 8"<<","<<"Age 9 "<<","<<"Age 10"<<","<<"Age 11"<<","<<"Age12+"<<endl;
     for(int n; n<=vsize-2; n++)
@@ -1122,6 +1132,12 @@ FUNCTION get_report
     Report<<"Year"<<","<<"Age 4"<<","<<"Age 5"<<","<<"Age 6"<<","<<"Age 7"<<","<<"Age 8"<<","<<"Age 9 "<<","<<"Age 10"<<","<<"Age 11"<<","<<"Age12+"<<endl;
     for(int n; n<=vsize-2; n++)
     Report<<Year[n+mod_syr]<<","<<maturity(n+1,1)<<","<<maturity(n+1,2)<<","<<maturity(n+1,3)<<","<<maturity(n+1,4)<<","<<maturity(n+1,5)<<","<<maturity(n+1,6)<<","<<maturity(n+1,7)<<","<<maturity(n+1,8)<<","<<maturity(n+1,9)<<endl;
+    Report<<"  "<<endl;
+    
+    Report<<"Survival"<<endl;
+    Report<<"Year"<<","<<"Age 4"<<","<<"Age 5"<<","<<"Age 6"<<","<<"Age 7"<<","<<"Age 8"<<","<<"Age 9 "<<","<<"Age 10"<<","<<"Age 11"<<","<<"Age12+"<<endl;
+    for(int n; n<=vsize-2; n++)
+    Report<<Year[n+mod_syr]<<","<<Sur(n+1,1)<<","<<Sur(n+1,2)<<","<<Sur(n+1,3)<<","<<Sur(n+1,4)<<","<<Sur(n+1,5)<<","<<Sur(n+1,6)<<","<<Sur(n+1,7)<<","<<Sur(n+1,8)<<","<<Sur(n+1,9)<<endl;
     Report<<"  "<<endl;
   
     Report<<"Pre-fishery total abundance (millions); naa"<<endl;
@@ -1287,8 +1303,8 @@ REPORT_SECTION
   REPORT(yminusoneFOR);
   REPORT(for_mat_weighted);
   REPORT(for_seine_weighted);
-  REPORT(max_Sur);
-  REPORT(slope);
+  REPORT(Sur_a);
+  REPORT(Sur_b);
   
 	//  Print run time statistics to the screen.
 	time(&finish);

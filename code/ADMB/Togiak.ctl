@@ -13,19 +13,18 @@
 #Parameter phases
 #Initial population (ph_Int)*
 1
-#Survival/Mortality (ph_S)
-1
 #Maturity inflection age (ph_mat_a)
 1
 #Gear selectivity inflection age (ph_gs_a)
 1
-
+#Survival (ph_Sur_a)
+2
 #Maturity slope (ph_mat_b)
 2
 #Gear selectivity slope age (ph_gs_b)
 2
-
-
+#Survival slope (ph_Sur_b)
+3
 #Recruitment (ph_Rec)
 3
 
