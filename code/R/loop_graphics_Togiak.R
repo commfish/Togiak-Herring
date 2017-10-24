@@ -55,10 +55,10 @@ options(scipen=999)
 windowsFonts(A = windowsFont("Times New Roman"))
 png(file='figures/Figure 1a.png', res=200, width=8, height=4, units ="in")  
 op <- par(family = "Times New Roman")
-yticks <- seq(0, 400000, 50000)
-plot(C$Year,C$tot_obs_aerial_tons,pch=21,col="black",xaxt="n", bg="blue",cex=1.2,lwd=1,
-     ylab="Biomass (tons)",xlab="Year",#options(scipen=4),
-     cex.axis=1.2,cex.lab=1.2, family="A",ylim=c(0, 400000))
+plot(C$Year,C$tot_obs_aerial_tons,pch=21,col="black",xaxt="n",bg="blue",cex=1.2,lwd=1,
+     ylab="Biomass (tons)",xlab="Year",ylim=c(0, 500000),
+     cex.axis=1.2,cex.lab=1.2, family="A")
+#yticks <- seq(0, 500000, 50000)     
 lines(C$Year,C$tot_obs_aerial_tons,lty=2,lwd=1,col="black") #observed
 lines(C$Year,C$tot_mat_B_tons,lwd=3,col="black") #predicted
 points(C$Year,C$tot_obs_aerial_tons,pch=21,col="black", bg="blue", cex=1.3) #observed
@@ -66,6 +66,7 @@ points(C$Year,C$tot_obs_aerial_tuned_tons,pch=21,col="black", bg="green", cex=1.
 points(max(FIGDATA$Year)+1,y,pch=8,col="black",cex=1)
 lines(FIGDATA$Year,FIGDATA$threshold,col="grey",lty=1, lwd=2)
 axis(side=1,at=seq(min(C$Year),max(C$Year),1),cex.axis=1, las=2)
+#axis(side=2,at=seq(0,500000,50000),cex.axis=1, las=2)
 legend("topright",c("Survey-estimated aerial biomass","Survey-estimated aerial biomass (tuned to model)","Model-estimated mature biomass (ADMB)",
                     "Mature biomass forecast (ADMB)"),
        pch=c(16,16, NA, 8),lty=c(2,2,1,NA), col=c("blue", "green", "black","black"),bg="black", cex=0.7, bty="n", 
@@ -86,9 +87,9 @@ windowsFonts(A = windowsFont("Times New Roman"))
 png(file='figures/Figure 1b.png', res=200, width=9, height=6, units ="in")  
 op <- par(family = "Times New Roman")
 yticks <- seq(0, 500000, 50000)
-plot(x$Year,x$tot_obs_aerial_tons,pch=21,col="black",xaxt="n", bg="blue",cex=1.2,lwd=1,
-     ylab="Biomass (tons)",xlab="Year", xaxt="n",
-     cex.axis=1.2,cex.lab=1.2, family="A",ylim=c(0, 500000))
+plot(x$Year,x$tot_obs_aerial_tons,pch=21,col="black", bg="blue",cex=1.2,lwd=1,
+     ylab="Biomass (tons)",xlab="Year", 
+     cex.axis=1.2,cex.lab=1.2, family="A",ylim=c(0, 500000),xaxt="n")
 lines(x$Year,x$tot_obs_aerial_tons,lty=2,lwd=1,col="black") #observed
 lines(x$Year,x$tot_mat_B_tons,lwd=2,col="black") #predicted
 lines(x$Year,x$yminustwo,lwd=2,col="purple") #predicted
@@ -133,18 +134,15 @@ g2a <- ggplot() +geom_bar(data=FIGDATA, mapping=aes(x=Year, y=res_aerial),
                           ylab("Aerial survey residuals")
 g2a<-g2a+scale_y_continuous(labels = fmt())+
      scale_x_continuous(breaks=seq(min(FIGDATA$Year),max(FIGDATA$Year)+1,1))+
-     theme(axis.text.x = element_text(size=15,colour="black"),
-        axis.title.x = element_text(size=15, colour="black"))+
-     theme(axis.text.y = element_text(size=15,colour="black"),
-        axis.title.y = element_text(size=15,colour="black"))+
+     theme(axis.text.x = element_text(size=14,colour="black",family="Times New Roman"),
+        axis.title.x = element_text(size=14, colour="black",family="Times New Roman"))+
+     theme(axis.text.y = element_text(size=14,colour="black",family="Times New Roman"),
+        axis.title.y = element_text(size=14,colour="black",family="Times New Roman"))+
      theme(panel.border = element_rect(colour = "black"))+
      theme(legend.position="none")+
      theme(panel.grid.major = element_line(colour="white"))+
      theme(strip.text.x = element_text(size=14,face="bold"))
-g2a<-g2a+theme_set(theme_bw(base_size=12,base_family=
-                     'Times New Roman')+
-            theme(panel.grid.major = element_blank(),
-                  panel.grid.minor = element_blank()))
+
 cutoff <- data.frame(yintercept=0)
 g2a<-g2a + geom_hline(aes(yintercept=yintercept), data=cutoff, show.legend=FALSE, 
                       colour="black", size=0.55)
@@ -158,7 +156,7 @@ print(g2a,vp=vplayout(1,1:1))
 dev.off()
 C<-subset(FIGDATA, select=c(Year, res_aerial))
 Figure_2_data<-C
-rm(B,g2a,C, cutoff)
+rm(g2a,C, cutoff)
 #------------------------------------------------------------------------------
 # Figure 3: Model estimates of age-4 recruit strength (numbers of age-4 mature 
 #             and immature fish).
@@ -179,9 +177,15 @@ g3 <- g3 +theme(legend.position="none") +scale_x_continuous(breaks=seq(min(B$Yea
   theme(legend.position="none")+
   theme(panel.border = element_rect(colour = "black"))
 
-g3 <- g3+theme_set(theme_bw(base_size=14,base_family='Times New Roman')+
-                     theme(panel.grid.major = element_blank(),
-                           panel.grid.minor = element_blank()))
+g3<-g3+theme(panel.grid.major = element_blank(),
+               panel.grid.minor = element_blank())+  
+  theme(axis.text.x = element_text(size=12,colour="black", family="Times New Roman"),
+        axis.title.x = element_text(size=14, colour="black",family="Times New Roman"))+
+  theme(axis.text.y = element_text(size=12,colour="black",family="Times New Roman"),
+        axis.title.y = element_text(size=14,colour="black",family="Times New Roman"))+
+  theme(panel.background = element_rect(colour="white"))+
+  theme(panel.border = element_rect(colour = "black"))+
+  theme(strip.text.x = element_text(size=14,face="bold", family="Times New Roman"))
 g3 <- g3+theme(axis.text.x=element_text(angle=-90))
 
 png(file='figures/Figure 3.png', res=200, width=10, height=6, units ="in")
@@ -269,31 +273,58 @@ rm(g4b,B,g4c,maxY)
 #           and gear selectivity at age (c) by year.
 #------------------------------------------------------------------------------
 #Figure 5a: Model estimates of survival
-B<-subset(FIGDATAAGE, select=c(Age2, Survival)) #predicted
-B$Age2<-as.factor(B$Age2)
-B$Age2 <- factor(B$Age2, as.character(B$Age2))
-g5a <- ggplot() +geom_bar(data=B, mapping=aes(x=Age2, y=Survival),stat='identity', 
-                          position='dodge', fill="#56B4E9")+ylab("Proportion-at-age")+
-  xlab("Age")+geom_line(data=B,aes(x=Age2,y=Survival),show.legend=FALSE,size=2,colour="black") 
+y<-as.data.frame(A$Sur)
+B<-subset(FIGDATA, select=c(Year)) #predicted
+C <- cbind(y,B)
+C <- merge(FIGDATA,C,by=c("Year"), all=TRUE)
+C["Age4"]<-C$V1
+C["Age5"]<-C$V2
+C["Age6"]<-C$V3
+C["Age7"]<-C$V4
+C["Age8"]<-C$V5
+C["Age9"]<-C$V6
+C["Age10"]<-C$V7
+C["Age11"]<-C$V8
+C["Age12"]<-C$V9
+C<-subset(C, select=c(Year, Age4, Age5, Age6, Age7, Age8, Age9, Age10, Age11, Age12))
+C<- melt(C, id=c("Year"), na.rm=TRUE)
+C["Age"] <- ifelse(C$variable=="Age4","4", ifelse (C$variable=="Age5","5",
+                                                   ifelse (C$variable=="Age6","6",
+                                                           ifelse (C$variable=="Age7","7",
+                                                                   ifelse (C$variable=="Age8","8",
+                                                                           ifelse (C$variable=="Age9","9",
+                                                                                   ifelse (C$variable=="Age10","10",
+                                                                                           ifelse (C$variable=="Age11","11","12+"))))))))
 
-g5a<-g5a+coord_cartesian(ylim=c(0,1))+  
-  theme(axis.text.x = element_text(size=12,colour="black",family="Times New Roman"),
+C["SUR"]<-C$value
+C<-subset(C, select=c(Year, Age, SUR))
+C$Age <- factor(C$Age, levels=c("4", "5", "6", "7", "8", "9", "10","11", "12+"))
+g5a<-ggplot(data=C,aes(x=Age, y=SUR,fill=Age))+facet_wrap(~Year,ncol=8,as.table=TRUE)+
+  geom_bar(stat="identity")+
+  geom_line(data=C,aes(x=Age,y=SUR,group=Year),show.legend=FALSE,size=1,colour="black")+ 
+  theme_bw()+
+  xlab ("Age")+ylab("Proportion-at-age")+
+  theme(text=element_text(family="Times New Roman", face="bold", size=12))
+
+g5a<-g5a+coord_cartesian(ylim=c(0,1))+
+  theme(axis.text.x = element_text(size=8,colour="black",family="Times New Roman"),
         axis.title.x = element_text(size=14, colour="black",family="Times New Roman"))+
   theme(axis.text.y = element_text(size=12,colour="black",family="Times New Roman"),
         axis.title.y = element_text(size=14,colour="black",family="Times New Roman"))+
   theme(plot.title=element_text(size=rel(1.5),colour="black",vjust =1))+
-  theme(strip.text.x = element_text(size=14,face="bold", family="Times New Roman"))+
+  theme(strip.text.x = element_text(size=14,face="bold",family="Times New Roman"))+
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
 g5a<-g5a + ggtitle("Survival") + 
   theme(plot.title = element_text(lineheight=.8, face="bold"))
-png(file='figures/Figure 5a.png', res=200, width=9, height=6, units ="in")
+
+png(file='figures/Figure 5a.png', res=200, width=11, height=6, units ="in")
 pushViewport(viewport(layout=grid.layout(1,1)))
 vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
 print(g5a,vp=vplayout(1,1:1))
-Figure_5a_data<-B
 dev.off()
-rm(B,g5a)
+Figure_5a_data<-C
+rm(y,B,C,g5a)
 
 #Figure 5b: Model estimates of maturity
 y<-as.data.frame(A$maturity)
@@ -697,6 +728,7 @@ rm(B,p6)
 #detach(package:Hmisc, unload = TRUE)
 MAXy<-max(FIGDATAAGE$for_mat_baa_tons,na.rm=TRUE)*1.5 # set y max. limit
 FIGDATAAGE["for_mat_baa_tons"]<-as.numeric(FIGDATAAGE$for_mat_baa_tons)
+FIGDATAAGE$for_mat_baa_tons<-round2(FIGDATAAGE$for_mat_baa_tons)
 #Check to make sure that the numbers on top of bar sum to to forecasted biomass
 #If they don't enter the % manually below
 FIGDATAAGE$Age2<-as.factor(FIGDATAAGE$Age2)
@@ -708,8 +740,8 @@ g8<-ggplot(FIGDATAAGE, aes(x=Age2, y=for_mat_baa_tons)) +
   theme(text=element_text(family="Times New Roman", size=12))+
   geom_bar(stat="identity",position="dodge" ,fill="#E69F00")
 
-g8<-g8+geom_text(data=FIGDATAAGE,aes(label=round2(for_mat_baa_tons), cex=1),
-                   vjust=-1)
+g8<-g8+geom_text(data=FIGDATAAGE,aes(label=comma(for_mat_baa_tons)), size=4,
+                 family="Times New Roman",vjust=-1)
 g8<-g8+coord_cartesian(ylim=c(0,MAXy))
 
 g8<-g8 + theme(legend.position="none")+
@@ -841,8 +873,8 @@ g10<-ggplot(FIGDATAAGE, aes(x=Age2, y=fw_a_a)) +
   theme(text=element_text(family="Times New Roman", size=12))+
   geom_bar(stat="identity",position="dodge" ,fill="#56B4E9")
 
-g10<-g10+geom_text(data=FIGDATAAGE,aes(label=paste(FIGDATAAGE$fw_a_a,"g", sep=""), 
-                                       cex=1),vjust=-1) #add prop. on top of bars
+g10<-g10+geom_text(data=FIGDATAAGE,aes(label=paste(FIGDATAAGE$fw_a_a,"g", sep="")), 
+                                       size=4,vjust=-1, family="Times New Roman") #add prop. on top of bars
 g10<-g10+coord_cartesian(ylim=c(0,MAXy))
 g10<-g10 + theme(legend.position="none")+
   theme(axis.text.x = element_text(size=14,colour="black",family="Times New Roman"),

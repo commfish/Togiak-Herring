@@ -581,7 +581,7 @@ PRELIMINARY_CALCS_SECTION
          gs_a=6;
          gs_b=1;
          Sur_a=0.8;
-         Sur_b=0.01;
+         Sur_b=0.03;
 
          init_age_4(1)=	820.29;
          init_age_4(2)=	820.29;
@@ -721,10 +721,7 @@ FUNCTION get_parameters
    }
   }         
  
-  
-  //Survival (uncomment next two lines for one survival across all ages)
-  //Sur(i,j) = max_Sur;
-  //S_for = max_Sur;
+//Survival; to make survival the same for all ages and years, change (j<=5) to (j<=9)
 
 FUNCTION Time_Loop
 
