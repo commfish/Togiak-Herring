@@ -260,7 +260,6 @@ DATA_SECTION
 
      //weights on yearly data
   init_vector wt_aerial(1,dyrs)          //aerial survey       
-  init_vector wt_mat(1,dyrs)             //total run--mature age composition
   
 
   // |--------------------------------------------------------------------------|
@@ -938,7 +937,7 @@ FUNCTION get_residuals
             }
             else
             {
-              res_mat_comp(i,j)=(obs_mat_comp(i,j)-est_mat_comp(i,j))*wt_mat(i);
+              res_mat_comp(i,j)=(obs_mat_comp(i,j)-est_mat_comp(i,j));
             
        }
     }
@@ -1110,13 +1109,15 @@ FUNCTION get_report
     Report<<"tot_sp_N:"<<","<<"Total spawning abundance (millions)"<<endl;
     Report<<"tot_obs_catch:"<<","<<"Total observed catch (tonnes)"<<endl;
     Report<<"tot_obs_aerial_tons:"<<","<<"Observed aerial biomass (tons)"<<endl;
+    Report<<"tot_obs_aerial_tuned_tons:"<<","<<"Observed aerial biomass (tons)-used in model"<<endl;
+    Report<<"wt_aerial:"<<","<<"aerial survey weights"<<endl;
     Report<<"N:"<<","<<"Pre-fishery total abundance (millions)"<<endl;
     Report<<"tot_mat_B_tons:"<<","<<"Total mature biomass (tons)"<<endl;
     Report<<"tot_post_N:"<<","<<"Post fishery total abundance (millions)"<<endl;
-
-    Report<<"Year"<<","<<"tot_sel_N"<<","<<"tot_mat_N"<<","<<"tot_sel_B"<<","<<"init_age_4"<<","<<"tot_sp_N"<<","<<"tot_obs_catch"<<","<<"tot_obs_aerial_tons"<<","<<"N"<<","<<"tot_mat_B_tons"<<","<<"tot_post_N"<<endl;
+    
+    Report<<"Year"<<","<<"tot_sel_N"<<","<<"tot_mat_N"<<","<<"tot_sel_B"<<","<<"init_age_4"<<","<<"tot_sp_N"<<","<<"tot_obs_catch"<<","<<"tot_obs_aerial_tons"<<","<<"tot_obs_aerial_tuned_tons"<<","<<"wt_aerial"<<","<<"N"<<","<<"tot_mat_B_tons"<<","<<"tot_post_N"<<endl;
     for(int n; n<=vsize-2; n++)
-    Report<<Year[n+mod_syr]<<","<<tot_sel_N[n+1]<<","<<tot_mat_N[n+1]<<","<<tot_sel_B[n+1]<<","<<init_age_4[n+1]<<","<<tot_sp_N[n+1]<<","<<tot_obs_catch[n+1]<<","<<tot_obs_aerial_tons[n+1]<<","<<N[n+1]<<","<<tot_mat_B_tons[n+1]<<","<<tot_post_N[n+1]<<endl;
+    Report<<Year[n+mod_syr]<<","<<tot_sel_N[n+1]<<","<<tot_mat_N[n+1]<<","<<tot_sel_B[n+1]<<","<<init_age_4[n+1]<<","<<tot_sp_N[n+1]<<","<<tot_obs_catch[n+1]<<","<<tot_obs_aerial_tons[n+1]<<","<<tot_obs_aerial_tuned_tons[n+1]<<","<<wt_aerial[n+1]<<","<<N[n+1]<<","<<tot_mat_B_tons[n+1]<<","<<tot_post_N[n+1]<<endl;
     Report<<"  "<<endl;
 
     Report<<"Gear Selectivity"<<endl;

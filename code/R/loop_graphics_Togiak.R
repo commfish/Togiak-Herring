@@ -58,7 +58,6 @@ op <- par(family = "Times New Roman")
 plot(C$Year,C$tot_obs_aerial_tons,pch=21,col="black",xaxt="n",bg="blue",cex=1.2,lwd=1,
      ylab="Biomass (tons)",xlab="Year",ylim=c(0, 500000),
      cex.axis=1.2,cex.lab=1.2, family="A")
-#yticks <- seq(0, 500000, 50000)     
 lines(C$Year,C$tot_obs_aerial_tons,lty=2,lwd=1,col="black") #observed
 lines(C$Year,C$tot_mat_B_tons,lwd=3,col="black") #predicted
 points(C$Year,C$tot_obs_aerial_tons,pch=21,col="black", bg="blue", cex=1.3) #observed
@@ -66,7 +65,6 @@ points(C$Year,C$tot_obs_aerial_tuned_tons,pch=21,col="black", bg="green", cex=1.
 points(max(FIGDATA$Year)+1,y,pch=8,col="black",cex=1)
 lines(FIGDATA$Year,FIGDATA$threshold,col="grey",lty=1, lwd=2)
 axis(side=1,at=seq(min(C$Year),max(C$Year),1),cex.axis=1, las=2)
-#axis(side=2,at=seq(0,500000,50000),cex.axis=1, las=2)
 legend("topright",c("Survey-estimated aerial biomass","Survey-estimated aerial biomass (tuned to model)","Model-estimated mature biomass (ADMB)",
                     "Mature biomass forecast (ADMB)"),
        pch=c(16,16, NA, 8),lty=c(2,2,1,NA), col=c("blue", "green", "black","black"),bg="black", cex=0.7, bty="n", 
@@ -87,7 +85,7 @@ windowsFonts(A = windowsFont("Times New Roman"))
 png(file='figures/Figure 1b.png', res=200, width=9, height=6, units ="in")  
 op <- par(family = "Times New Roman")
 yticks <- seq(0, 500000, 50000)
-plot(x$Year,x$tot_obs_aerial_tons,pch=21,col="black", bg="blue",cex=1.2,lwd=1,
+plot(x$Year,x$tot_obs_aerial_tons,pch=21,col="black",bg="blue",cex=1.2,lwd=1,
      ylab="Biomass (tons)",xlab="Year", 
      cex.axis=1.2,cex.lab=1.2, family="A",ylim=c(0, 500000),xaxt="n")
 lines(x$Year,x$tot_obs_aerial_tons,lty=2,lwd=1,col="black") #observed
@@ -103,7 +101,7 @@ points(max(x$Year)-2,A$yminusthreeFOR,pch=8,col="red",cex=1)
 points(max(x$Year)-3,A$yminusfourFOR,pch=8,col="orange",cex=1)
 points(max(x$Year),A$yminusoneFOR,pch=8,col="blue",cex=1)
 lines(x$Year+1,x$threshold,col="grey",lty=1, lwd=2)
-axis(side=1,at=seq(min(C$Year),max(C$Year)+1,1),cex.axis=1, las=2)
+axis(side=1,at=seq(min(x$Year),max(x$Year)+1,1),cex.axis=1, las=2)
 legend("topright",c("Survey-estimated aerial biomass",
                     "Survey-estimated aerial biomass (tuned to model)",
                     "2018 Model-estimated",
