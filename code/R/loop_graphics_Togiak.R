@@ -429,7 +429,7 @@ pushViewport(viewport(layout=grid.layout(1,1)))
 vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
 print(g5c,vp=vplayout(1,1:1))
 dev.off()
-Figure_5c_data<-B
+Figure_5c_data<-C
 rm(B,C,y,g5c)
 #------------------------------------------------------------------------------
 # Figure 6: Observed seine  (bar) and model-estimated (red line with square points) 
@@ -500,8 +500,7 @@ C$Year<-factor(C$Year,levels=c(
   "1980",	"1984",	"1988",	"1992",	"1996",	"2000",	"2004",	"2008",	"2012",	"2016",
   "1981",	"1985",	"1989",	"1993",	"1997",	"2001",	"2005",	"2009",	"2013","2017",
   "1982",	"1986",	"1990",	"1994",	"1998",	"2002",	"2006",	"2010",	"2014",	"2018",
-  "1983",	"1987",	"1991",	"1995",	"1999",	"2003",	"2007",	"2011",	"2015",	"2019"
-))
+  "1983",	"1987",	"1991",	"1995",	"1999",	"2003",	"2007",	"2011",	"2015",	"2019"))
 
 g6<-ggplot(data=C,aes(x=Age, y=OBS,fill=Age))+
     facet_wrap(~Year,nrow=4, ncol=10)+ 
@@ -598,8 +597,7 @@ C$Year<-factor(C$Year,levels=c(
   "1980",	"1984",	"1988",	"1992",	"1996",	"2000",	"2004",	"2008",	"2012",	"2016",
   "1981",	"1985",	"1989",	"1993",	"1997",	"2001",	"2005",	"2009",	"2013","2017",
   "1982",	"1986",	"1990",	"1994",	"1998",	"2002",	"2006",	"2010",	"2014",	"2018",
-  "1983",	"1987",	"1991",	"1995",	"1999",	"2003",	"2007",	"2011",	"2015",	"2019"
-))
+  "1983",	"1987",	"1991",	"1995",	"1999",	"2003",	"2007",	"2011",	"2015",	"2019"))
 
 
 g7<-ggplot(data=C,aes(x=Age, y=OBS,fill=Age))+
@@ -611,7 +609,7 @@ g7<-ggplot(data=C,aes(x=Age, y=OBS,fill=Age))+
   xlab ("Age")+ylab("Mature proportion-at-age")+ 
   theme(text=element_text(family="Times New Roman", face="bold", size=12))
 
-#g7<-g7+coord_cartesian(ylim=c(0,1))+ #uncomment and comment out next line if one y axis from 0 to 1
+#g7<-g7+coord_cartesian(ylim=c(0,1))+ #uncomment and comment out next line if want y axis from 0 to 1
 g7<-g7+coord_cartesian(ylim=c(0,0.75))+
   theme(axis.text.x = element_text(size=10,colour="black",family="Times New Roman"),
         axis.title.x = element_text(size=14, colour="black",family="Times New Roman"))+
@@ -813,6 +811,8 @@ pushViewport(viewport(layout=grid.layout(1,1)))
 vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
 print(g9,vp=vplayout(1,1:1))
 dev.off()
+C<-subset(C, select=c(Age2, for_mat_prop, Percentage2))
+Figure_9a_data<-C
 rm(g9, D, x, C, Check)
 
 FIGDATAAGE$Age2<-as.factor(FIGDATAAGE$Age2)
@@ -855,8 +855,7 @@ vplayout<-function(x,y) viewport (layout.pos.row=x, layout.pos.col=y)
 print(g9,vp=vplayout(1,1:1))
 dev.off()
 
-C<-subset(FIGDATAAGE, select=c(Age2, for_mat_prop, fw_a_a))
-Figure_9_data<-C
+Figure_9b_data<-C
 
 rm(g9, D, x, C, Check)
 #------------------------------------------------------------------------------
@@ -1106,44 +1105,44 @@ csSheetTitle <- CellStyle(wb) + Font(wb,isBold=FALSE, heightInPoints=12, name="C
 setCellStyle(sheetTitle[[1,1]], csSheetTitle)
 cs1 <- CellStyle(wb) + Font(wb, heightInPoints=10, name="Cambria") +
   Alignment(h="ALIGN_CENTER")
-addDataFrame(Figure_1_data, sheet1, startRow=1, startColumn=7,row.names=FALSE, colnamesStyle=cs1, rownamesStyle=cs1, colStyle=cs1)
+addDataFrame(Figure_1b_data, sheet1, startRow=1, startColumn=7,row.names=FALSE, colnamesStyle=cs1, rownamesStyle=cs1, colStyle=cs1)
 addDataFrame(Figure_2_data, sheet2, startRow=1, startColumn=7,row.names=FALSE, colnamesStyle=cs1, rownamesStyle=cs1, colStyle=cs1)
 addDataFrame(Figure_3_data, sheet3, startRow=1, startColumn=8,row.names=FALSE, colnamesStyle=cs1, rownamesStyle=cs1, colStyle=cs1)
 addDataFrame(Figure_4_data, sheet4, startRow=1, startColumn=10,row.names=FALSE, colnamesStyle=cs1, rownamesStyle=cs1, colStyle=cs1)
-addDataFrame(Figure_5a_data, sheet5, startRow=1, startColumn=8,row.names=FALSE, colnamesStyle=cs1, rownamesStyle=cs1, colStyle=cs1)
-addDataFrame(Figure_5b_data, sheet5, startRow=1, startColumn=11,row.names=FALSE, colnamesStyle=cs1, rownamesStyle=cs1, colStyle=cs1)
-addDataFrame(Figure_5c_data, sheet5, startRow=1, startColumn=14,row.names=FALSE, colnamesStyle=cs1, rownamesStyle=cs1, colStyle=cs1)
-addDataFrame(Figure_6_data, sheet6, startRow=1, startColumn=8,row.names=FALSE, colnamesStyle=cs1, rownamesStyle=cs1, colStyle=cs1)
-addDataFrame(Figure_7_data, sheet7, startRow=1, startColumn=8,row.names=FALSE, colnamesStyle=cs1, rownamesStyle=cs1, colStyle=cs1)
+addDataFrame(Figure_5a_data, sheet5, startRow=1, startColumn=9,row.names=FALSE, colnamesStyle=cs1, rownamesStyle=cs1, colStyle=cs1)
+addDataFrame(Figure_5b_data, sheet5, startRow=1, startColumn=12,row.names=FALSE, colnamesStyle=cs1, rownamesStyle=cs1, colStyle=cs1)
+addDataFrame(Figure_5c_data, sheet5, startRow=1, startColumn=15,row.names=FALSE, colnamesStyle=cs1, rownamesStyle=cs1, colStyle=cs1)
+addDataFrame(Figure_6_data, sheet6, startRow=1, startColumn=15,row.names=FALSE, colnamesStyle=cs1, rownamesStyle=cs1, colStyle=cs1)
+addDataFrame(Figure_7_data, sheet7, startRow=1, startColumn=15,row.names=FALSE, colnamesStyle=cs1, rownamesStyle=cs1, colStyle=cs1)
 addDataFrame(Figure_8_data, sheet8, startRow=1, startColumn=6,row.names=FALSE, colnamesStyle=cs1, rownamesStyle=cs1, colStyle=cs1)
-addDataFrame(Figure_9_data, sheet9, startRow=1, startColumn=6,row.names=FALSE, colnamesStyle=cs1, rownamesStyle=cs1, colStyle=cs1)
+addDataFrame(Figure_9a_data, sheet9, startRow=1, startColumn=6,row.names=FALSE, colnamesStyle=cs1, rownamesStyle=cs1, colStyle=cs1)
 addDataFrame(Figure_10_data, sheet10, startRow=1, startColumn=6,row.names=FALSE, colnamesStyle=cs1, rownamesStyle=cs1, colStyle=cs1)
 addDataFrame(Figure_11_data, sheet11, startRow=1, startColumn=8,row.names=FALSE, colnamesStyle=cs1, rownamesStyle=cs1, colStyle=cs1)
 addDataFrame(Figure_12_data, sheet12, startRow=1, startColumn=8,row.names=FALSE, colnamesStyle=cs1, rownamesStyle=cs1, colStyle=cs1)
 
 # 
 # #replace with correct stock
-addPicture("Figure 1.png", sheet1, startRow=1, startColumn=1)
-addPicture("Figure 2.png", sheet2, startRow=1, startColumn=1)
-addPicture("Figure 3.png", sheet3, startRow=1, startColumn=1)
-addPicture("Figure 4.png", sheet4, startRow=1, startColumn=1)
-addPicture("Figure 5a.png", sheet5, startRow=1, startColumn=1)
-addPicture("Figure 5b.png", sheet5, startRow=36, startColumn=1)
-addPicture("Figure 5c.png", sheet5, startRow=71, startColumn=1)
-addPicture("Figure 6.png", sheet6, startRow=1, startColumn=1)
-addPicture("Figure 7.png", sheet7, startRow=1, startColumn=1)
-addPicture("Figure 8.png", sheet8, startRow=1, startColumn=1)
-addPicture("Figure 9a.png", sheet9, startRow=1, startColumn=1)
-addPicture("Figure 9b.png", sheet9, startRow=22, startColumn=1)
-addPicture("Figure 10.png", sheet10, startRow=1, startColumn=1)
-addPicture("Figure 11.png", sheet11, startRow=1, startColumn=1)
-addPicture("Figure 12.png", sheet12, startRow=1, startColumn=1)
-addPicture("Figure 13a.png", sheet13, startRow=1, startColumn=1)
-addPicture("Figure 13b.png", sheet13, startRow=46, startColumn=1)
-# 
-# 
- saveWorkbook(wb, "Figures and Data (Togiak Stock).xlsx")
-# #remove unneeded files from H drive
+addPicture("figures/Figure 1a.png", sheet1, startRow=1, startColumn=1)
+addPicture("figures/Figure 1b.png", sheet1, startRow=25, startColumn=1)
+addPicture("figures/Figure 2.png", sheet2, startRow=1, startColumn=1)
+addPicture("figures/Figure 3.png", sheet3, startRow=1, startColumn=1)
+addPicture("figures/Figure 4.png", sheet4, startRow=1, startColumn=1)
+addPicture("figures/Figure 5a.png", sheet5, startRow=1, startColumn=1)
+addPicture("figures/Figure 5b.png", sheet5, startRow=36, startColumn=1)
+addPicture("figures/Figure 5c.png", sheet5, startRow=71, startColumn=1)
+addPicture("figures/Figure 6.png", sheet6, startRow=1, startColumn=1)
+addPicture("figures/Figure 7.png", sheet7, startRow=1, startColumn=1)
+addPicture("figures/Figure 8.png", sheet8, startRow=1, startColumn=1)
+addPicture("figures/Figure 9a.png", sheet9, startRow=1, startColumn=1)
+addPicture("figures/Figure 9b.png", sheet9, startRow=25, startColumn=1)
+addPicture("figures/Figure 10.png", sheet10, startRow=1, startColumn=1)
+addPicture("figures/Figure 11.png", sheet11, startRow=1, startColumn=1)
+addPicture("figures/Figure 12.png", sheet12, startRow=1, startColumn=1)
+addPicture("figures/Figure 13a.png", sheet13, startRow=1, startColumn=1)
+addPicture("figures/Figure 13b.png", sheet13, startRow=46, startColumn=1)
+
+saveWorkbook(wb, "output/Figures and Data (Togiak Stock).xlsx")
+
 
 
 
