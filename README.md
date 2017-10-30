@@ -13,6 +13,7 @@ Age-structured Togiak herring stock assessment for forecasting biomass.
 - [ ] 2018 forecast weight at age (population) [take average of last 2 years]  
 - [ ] Method to forecast recruits; Recommend to use the median of last 10 years  
 - [ ] Gear selectivity; Need a split between 2000 and 2005 (look at opening schedules to determine when set openings of 20 minutes to unlimited term); one split since the change in fishery was slow; look for most dramatic change in fishery based on data  
+- [ ] Add historical weight at age for major age classes along with actual weight as in FDS report (maybe replace Fig. 10)  
 - [x] Remove 2000 aerial survey value from model data  
 - [x] need to change report output to init_age_4 from init_age_3  
 - [x] Average weight across all ages instead of average weight at age for forecast figure  
