@@ -11,3 +11,7 @@
 *.png
 .FIGDATA.dat
 .FIGDATAAGE.dat
+.Togiak.dat
+.Togiak.ctl
+.Togiak_graphics.ctl
+.model.rep
