@@ -9,10 +9,6 @@
 .*Rproj
 *.csv
 *.png
-.FIGDATA.dat
-.FIGDATAAGE.dat
-.Togiak.dat
-.Togiak.ctl
-.Togiak_graphics.ctl
-.model.rep
+model.rep
 *.ctl
+*.dat
