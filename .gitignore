@@ -10,7 +10,7 @@
 *.csv
 *.png
 model.rep
-*.ctl
 *.dat
 *.pdf
 *.html
+*.xlsx
