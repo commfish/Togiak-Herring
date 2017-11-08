@@ -7,7 +7,7 @@ output:
 Age-structured Togiak herring stock assessment for forecasting biomass.  
 
 **Tasks**:  
-- [ ] tot-obs-catch is only seine catch; need to add observed gillnet catch  
+- [ ] tot-obs-catch is only seine catch; need to add observed gillnet catch so that yellow/blue bar graphic contains total catch 
 - [ ] Missing 2016 observed weight at age for purse seine/total run [take average of 2015 and 2017 for value]   -[ ] obs_c_waa: Add 2017 observed weight at age for purse seine/total run to model after provided by Greg  
 - [ ] 2016 gillnet age comp missing; Sherri followed pattern down to calculate (can’t just take average from         prior years since strong age classes go through population)  
 - [ ] 2018 forecast weight at age (population) [take average of last 2 years]  
