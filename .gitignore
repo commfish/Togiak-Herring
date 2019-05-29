@@ -2,16 +2,3 @@
 .Rhistory
 .RData
 .Ruserdata
-.cov
-.dep
-.hes
-.prj
-.*Rproj
-*.csv
-*.png
-model.rep
-*.dat
-*.pdf
-*.html
-*.xlsx
-output
