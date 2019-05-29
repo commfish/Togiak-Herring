@@ -1,0 +1,1565 @@
+// ----------------------------------------------------------------------------- //
+//               Age-structured model for Alaska herring stocks                  //
+//                                                                               //
+//                               VERSION 0.1                                     //
+//                                Jan  2015                                      //
+//                                                                               //
+//                                 AUTHORS                                       //
+//                              Sherri Dressel                                   //                                 
+//                        sherri.dressel@alaska.gov                              //
+//                               Sara Miller                                     //
+//                          sara.miller@alaska.gov                               //
+//                               Kray Van Kirk                                   //
+//                          kray.vankirk@alaska.gov                              //
+//                                                                               //
+//                   Built on code developed by Peter Hulson                     //
+//                            pete.hulson@noaa.gov                               //
+//                                                                               //
+//                           Layout and references                               //
+//                              Steven Martell                                   //
+//                          martell.steve@gmail.com                              //
+//                                                                               //
+// CONVENTIONS: Formatting conventions are based on                              //
+//              The Elements of C++ Style (Misfeldt et al. 2004)                 //
+//                                                                               //
+//                                                                               //
+// NAMING CONVENTIONS:                                                           //
+//             Macros       -> UPPERCASE                                         //
+//             Constants    -> UpperCamelCase                                    //
+//             Functions    -> lowerCamelCase                                    //
+//             Variables    -> lowercase                                         //
+//                                                                               //
+//                                                                               //
+//                                                                               //
+// ----------------------------------------------------------------------------- //
+//-- CHANGE LOG:                                                               --//
+//--  Jan 2015 - revision of legacy code::                                     --//
+//--               :variable naming conventions                                --//
+//--               :intra-annual calendar                                      --//
+//--               :standardization of units across stocks                     --//
+//--               :modification for potential code distribution               --//
+//--                                                                           --//
+//--                                                                           --//
+// ----------------------------------------------------------------------------- //
+
+
+DATA_SECTION
+
+  // |--------------------------------------------------------------------------|
+  // |MCMC OUTPUT FILE
+  // |--------------------------------------------------------------------------|
+
+     !!CLASS ofstream evalout("evalout.prj");
+
+  // |--------------------------------------------------------------------------|
+  // | STRINGS FOR INPUT FILES                                                  |
+  // |--------------------------------------------------------------------------|
+  // |- The files below are listed in the 'model.dat' file;
+  // |   nothing else should be in the 'model.dat' file
+  // |- These files should be named by the stock they are modeling;
+  // |   example: "sitka.dat", "seymour.dat"
+  // |- DO NOT use two word names such as "seymour cove.dat"
+  // |
+  // | DataFile               : data to condition the assessment model    
+  // | ControlFile            : controls for years, phases, and block options 
+  // | Graphics               : vectors for some stock assessment graphics
+
+  init_adstring DataFile;      
+  init_adstring ControlFile;
+  init_adstring LoopFile;
+  init_adstring Graphics; 
+
+  // | BaseFileName           : file prefix used for all  model output
+  // | ReportFileName         : file name to which report file is printed
+
+  !! BaseFileName = stripExtension(DataFile);  
+  !! ReportFileName = BaseFileName + adstring(".rep");
+
+  !! cout<<"You are modeling the "<<BaseFileName<<" stock of herring"<<endl;
+  !! cout<<""<<endl;
+  !! time(&start);
+
+  !! ad_comm::change_datafile_name(DataFile);
+
+  // |--------------------------------------------------------------------------|
+  // | MODEL STRUCTURAL DIMENSIONS                                              |
+  // |--------------------------------------------------------------------------|
+  // | 
+  // |-nages      -> number of ages
+  // |-dat_styr   -> data start year
+  // |-dat_nyr  -> data end year
+  // |-mod_syr   -> model start year
+  // |-mod_nyr  -> model end year
+  // |-dyrs       -> data year index
+  // |-myrs       -> model year index
+  // |-md_offset  -> offset data to model
+  // |-Year       -> year sequence for graphics (model + 1)
+  // | 
+  // | year         i
+  // | age          j
+  // | 
+
+     init_int dat_syr;
+     init_int dat_nyr;
+     init_int mod_syr;
+     init_int mod_nyr;
+     init_int sage;
+     init_int nage;
+     init_int nages;
+     int rec_syr;
+	!!  rec_syr = mod_syr + sage;
+
+	vector age(sage,nage);
+	!! age.fill_seqadd(sage,1);
+        
+
+        int dyrs
+        int myrs
+        int md_offset
+        vector Year(mod_syr,mod_nyr+1);       
+
+     int i;
+     int j;
+
+ LOCAL_CALCS
+
+  dyrs=dat_nyr-dat_syr+1;
+  myrs=mod_nyr-mod_syr+1;
+  md_offset=mod_syr-dat_syr;
+  Year.fill_seqadd(mod_syr,1);   
+
+ END_CALCS 
+
+
+  
+  // |--------------------------------------------------------------------------|
+  // | FORECASTING WEIGHT                                                       |
+  // |--------------------------------------------------------------------------|
+  // | //biomass by year from ASA excel output
+     init_vector threshold(1,myrs)
+     init_vector fw_a_a(1,nages);
+
+  // |---------------------------------------------------------------------------|
+  // | Time series data.  Catch in metric tonnes (except for tot_obs_catch_tons). Comps in proportions.
+  // |---------------------------------------------------------------------------|
+  
+     init_vector  tot_obs_catch_seine(1,myrs);
+     init_vector  tot_obs_aerial(1,myrs);
+     init_vector  tot_obs_aerial_tuned(1,myrs);
+
+     init_matrix  obs_catch_naa(1,myrs,1,nages);
+     init_matrix  obs_c_waa(1,myrs,1,nages);
+     init_matrix  obs_seine_comp(1,myrs,1,nages);
+     init_matrix  obs_mat_comp(1,myrs,1,nages);
+     
+     init_vector  tot_obs_catch_gillnet(1,myrs);
+     
+     vector  tot_obs_aerial_tons(1,myrs)
+     vector  tot_obs_aerial_tuned_tons(1,myrs)
+     vector  tot_obs_catch(1,myrs)
+
+     vector  tot_obs_catch_seine_tons(1,myrs)
+     vector  tot_obs_catch_gillnet_tons(1,myrs)
+     vector  tot_obs_catch_tons(1,myrs)
+     
+  // |--------------------------------------------------------------------------|
+  // | END OF FILE MARKER                                                       |
+  // |--------------------------------------------------------------------------|
+     init_number eof2
+
+
+ LOCAL_CALCS
+
+    if(eof2==42) cout << BaseFileName<<".dat has been read correctly!"<<endl;
+    else 
+    {       
+         cout <<"|----------------------------------------------------------------------|"<<endl;   
+         cout <<"|   ** Red alert! Captain to bridge! The .dat file is compromised! **  |"<<endl;
+         cout <<"|----------------------------------------------------------------------|"<<endl; 
+	 cout <<"|      Last integer read is "<<eof2<<", but the file *should* end with 42      |"<<endl;
+         cout <<"| Please check the .dat file for errors and make sure the above calls  |"<<endl;
+         cout <<"|              are matched exactly by the file's contents              |"<<endl;
+         cout <<"|----------------------------------------------------------------------|"<<endl;
+    exit(1); 
+    }
+
+
+
+     for (int i=1;i<=myrs;i++)
+       {
+     if (tot_obs_aerial(i)<0)
+       {
+     tot_obs_aerial_tons(i)=0;
+       }
+     else
+       {
+     tot_obs_aerial_tons(i)=tot_obs_aerial(i)*1.102311;
+       }
+       }
+
+     for (int i=1;i<=myrs;i++)
+       {
+     if (tot_obs_aerial_tuned(i)<0)
+       {
+     tot_obs_aerial_tuned_tons(i)=0;
+       }
+     else
+       {
+     tot_obs_aerial_tuned_tons(i)=tot_obs_aerial_tuned(i)*1.102311;
+       }
+       }
+       
+     for (int i=1;i<=myrs;i++)
+       {    
+     tot_obs_catch(i)=tot_obs_catch_seine(i)+tot_obs_catch_gillnet(i);
+     tot_obs_catch_seine_tons(i)=tot_obs_catch_seine(i)*1.102311;
+     tot_obs_catch_gillnet_tons(i)=tot_obs_catch_gillnet(i)*1.102311;
+        }
+        
+      for (int i=1;i<=myrs;i++)
+       {    
+     tot_obs_catch_tons(i)=tot_obs_catch(i)*1.102311;
+      }
+ END_CALCS
+ 
+
+
+  // |--------------------------------------------------------------------------|
+  // | MODEL DATA FROM CONTROL FILE                                             |
+  // |--------------------------------------------------------------------------|
+  // | This calls the control file
+  // | This file controls model years, estimation phases, blocks for
+  // | selectivity, maturity, and mortality (and fecundity if needed)
+  // | and anything else that is NOT observed data (catch, weight, eggs, etc.)
+
+  !! ad_comm::change_datafile_name(ControlFile);
+  
+
+  // |--------------------------------------------------------------------------|
+  // | ESTIMATION PHASES                                                        |
+  // |--------------------------------------------------------------------------|
+  // |
+  // | These govern the phases in which given parameters are estimated.
+  // | While these should likely not need adjusting, if you encounter problems,
+  // | you might explore some changes. A parameter whose estimation phase
+  // | is > 1 remains at its starting value for all phases < estimation phase.
+  // | A parameter with a negative phase is not estimated.
+  // |
+  // | Phase 1: -ph_Int    -> initial population
+  // |          -ph_mat_a  -> maturity inflection
+  // |          -ph_gs_a   -> gear selectivity inflection
+  // |          -ph_Sur_a   -> surviva inflection
+  // | Phase 2: -ph_mat_b  -> maturity slope
+  // |          -ph_gs_b   -> gear selectivity slope
+  // |          -ph_Sur_b   -> survival slope
+  // | Phase 3: -ph_Rec    -> recruitment (age 3)
+  // |          -ph_Ric    -> Ricker function
+  // |          -ph_md    -> mile-days  coefficient
+
+  init_number ph_Int
+  init_number ph_mat_a
+  init_number ph_gs_a
+  init_number ph_Sur_a
+  init_number ph_mat_b
+  init_number ph_gs_b
+  init_number ph_Sur_b
+  init_number ph_Rec
+  init_number ph_Ric
+  init_number ph_md		
+
+  
+
+  // |--------------------------------------------------------------------------|
+  // | OBJECTIVE FUNCTION WEIGHTS                                               |
+  // |--------------------------------------------------------------------------|
+  // |//overall intra-weight of dataset
+
+  init_number lR                          //Purse Seine--catcha ge composition
+  init_number lM                          //Total Run--mature age composition
+  init_number lA                          //aerial survey
+
+  //annual weights on aerial surveys
+  init_vector wt_aerial(1,dyrs)          //aerial survey       
+ 
+ 
+  // |--------------------------------------------------------------------------|
+  // | END OF FILE MARKER                                                       |
+  // |--------------------------------------------------------------------------|
+  init_number eof1
+
+
+ LOCAL_CALCS
+
+    if(eof1==42) cout << BaseFileName<<".ctl has been read correctly!"<<endl;
+    else 
+    {    
+         cout <<"|----------------------------------------------------------------------|"<<endl;   
+         cout <<"|      Red alert! Captain to bridge! The .ctl file is compromised!     |"<<endl;
+         cout <<"|----------------------------------------------------------------------|"<<endl; 
+	 cout <<"|      Last integer read is "<<eof1<<", but the file *should* end with 42      |"<<endl;
+         cout <<"| Please check the .ctl file for errors and make sure the above calls  |"<<endl;
+         cout <<"|              are matched exactly by the file's contents              |"<<endl;
+         cout <<"|----------------------------------------------------------------------|"<<endl;
+    exit(1); 
+    }
+
+
+ END_CALCS
+
+   !! ad_comm::change_datafile_name(LoopFile);
+  
+  // |--------------------------------------------------------------------------|
+  // | ARRAY LOOP INDEXING                                                      |
+  // |--------------------------------------------------------------------------|
+  // | 
+  // | These are the points at which the model allows natural mortality (M),
+  // | maturity-at-age (mat), gear selectivity-at-age (gs) to change based on
+  // | climate changes indicated by shifts in the Pacific Decadal Oscillation. 
+  // | Fecundity, at this point, remains stable with one estimate 
+  // |  
+  // | -mat_Bk     ->  number of maturity blocks (1 split = 2 blocks)
+  // | -mat_Bk_Yrs ->  specific years in which maturity-at-age changes
+  // | -gs_Bk      ->  number of gear selectivity blocks (1 split = 2 blocks)
+  // | -gs_Bk_Yrs  ->  specific years in which gear-selectivity-at-age changes
+  // | -M_Bk       ->  number of mortality blocks (1 split = 2 blocks)
+  // | -M_Bk_Yrs   ->  specific years in which mortality M changes
+
+
+  init_number mat_Bk
+  init_vector mat_Bk_Yrs(1,mat_Bk+1)
+  vector mat_Bk_Idx(1,mat_Bk+1)
+
+  init_number gs_Bk
+  init_vector gs_Bk_Yrs(1,gs_Bk+1)
+  vector gs_Bk_Idx(1,gs_Bk+1)
+  
+  init_number S_Bk
+  init_vector S_Bk_Yrs(1,S_Bk+1)
+  vector S_Bk_Idx(1,S_Bk+1)
+
+
+  // |--------------------------------------------------------------------------|
+  // | END OF FILE MARKER                                                       |
+  // |--------------------------------------------------------------------------|
+  init_number eof4
+
+ LOCAL_CALCS
+
+    if(eof1==42) cout << BaseFileName<<".ctl has been read correctly!"<<endl;
+    else 
+    {    
+         cout <<"|----------------------------------------------------------------------|"<<endl;   
+         cout <<"|      Red alert! Captain to bridge! The loop.ctl file is compromised!     |"<<endl;
+         cout <<"|----------------------------------------------------------------------|"<<endl; 
+	 cout <<"|      Last integer read is "<<eof4<<", but the file *should* end with 42      |"<<endl;
+         cout <<"| Please check the .ctl file for errors and make sure the above calls  |"<<endl;
+         cout <<"|              are matched exactly by the file's contents              |"<<endl;
+         cout <<"|----------------------------------------------------------------------|"<<endl;
+    exit(1); 
+    }
+
+
+
+   // | The lines below populate the indices for maturity, selectivity, and survival
+
+   for (int i=1;i<=mat_Bk+1;i++)
+     {
+       mat_Bk_Idx(i)=mat_Bk_Yrs(i)-mod_syr+1;
+     }
+
+   for (int i=1;i<=gs_Bk+1;i++)
+     {
+       gs_Bk_Idx(i)=gs_Bk_Yrs(i)-mod_syr+1;
+     }
+   for (int i=1;i<=S_Bk+1;i++)
+     {
+       S_Bk_Idx(i)=S_Bk_Yrs(i)-mod_syr+1;
+     }
+
+
+ END_CALCS
+ // |--------------------------------------------------------------------------|
+  // | HISTORICAL ESTIMATES FROM GRAPHICS FILE                                  |
+  // |--------------------------------------------------------------------------|
+  // | This calls the graphics file that holds historical model estimates
+  // | for the R graphics template
+  // | THis file will be updated each year (by you!)
+
+  !! ad_comm::change_datafile_name(Graphics);
+
+  // |--------------------------------------------------------------------------|
+  // | GRAPHICS CONTENTS                                                        |
+  // |--------------------------------------------------------------------------|
+  // |-model years
+  // |-yminusfour        -> ASA model (pre-fishery biomass) four years ago
+  // |-yminusthree       -> ASA model (pre-fishery biomass) three years ago
+  // |-yminustwo         -> ASA model (pre-fishery biomass) two years ago
+  // |-yminusone         -> ASA model (pre-fishery biomass) one year ago
+  // |-past forecasts     past forecasts (1993+)
+  // |-yminusfourFOR    -> pre-biomass forecast (short tons) four years ago
+  // |-yminusthreeFOR    -> pre-biomass forecast (short tons) three years ago
+  // |-yminustwoFOR      -> pre-biomass forecast (short tons) two years ago
+  // |-yminusoneFOR      -> pre-biomass forecast (short tons) one year ago
+  // | 
+  init_vector mod_yrs(1,myrs)
+  init_vector yminusfour(1,myrs)
+  init_vector yminusthree(1,myrs)
+  init_vector yminustwo(1,myrs)
+  init_vector yminusone(1,myrs)
+  init_vector past_forecasts(1,myrs)
+  init_number yminusfourFOR
+  init_number yminusthreeFOR
+  init_number yminustwoFOR
+  init_number yminusoneFOR
+  init_number eof3
+
+ LOCAL_CALCS
+
+    if(eof3==42) cout << BaseFileName<<"_graphics.ctl has been read correctly!"<<endl;
+    else 
+    {       
+         cout <<"|----------------------------------------------------------------------|"<<endl;   
+         cout <<"|   Red alert! Captain to bridge! The graphics file is compromised!    |"<<endl;
+         cout <<"|----------------------------------------------------------------------|"<<endl; 
+	 cout <<"|      Last integer read is "<<eof3<<", but the file *should* end with 42      |"<<endl;
+         cout <<"|  Please check the graphics file for errors and make sure the above   |"<<endl;
+         cout <<"|          calls are matched exactly by the file's contents            |"<<endl;
+         cout <<"|----------------------------------------------------------------------|"<<endl;
+    exit(1); 
+    }
+
+   
+ END_CALCS
+
+
+PARAMETER_SECTION
+
+  // |---------------------------------------------------------------------------------|
+  // | INITIAL POPULATION PARAMETERS
+  // |---------------------------------------------------------------------------------|
+  // | 
+  // |- initial age 4 abundance
+  // |- initial population abundance (ages 4 - 12+)
+	
+     init_bounded_vector init_age_4(1,myrs,5,2500,ph_Rec)
+     init_bounded_vector init_pop(1,8,1,2200,ph_Int)
+
+
+  // |---------------------------------------------------------------------------------|
+  // | SELECTIVITY  PARAMETERS
+  // |---------------------------------------------------------------------------------|
+  // | 
+  // |- age at 50% selectivity
+  // |- selectivity-at-age slope
+  // |
+  // | - Note that there are THREE selectivity values: early, late, and seine
+  // |   seine selectivity is constant over all years, varying by age
+  // |   early-late fishery selectivities change in 1993
+
+     init_bounded_vector mat_a(1,mat_Bk,1,10,ph_mat_a)
+     init_bounded_vector mat_b(1,mat_Bk,0,5,ph_mat_b)
+     matrix maturity(1,myrs,1,nages)
+     vector for_mat(1,nages) //forecasted maturity
+     
+     init_bounded_vector gs_a(1,gs_Bk,1,10,ph_mat_a)
+     init_bounded_vector gs_b(1,gs_Bk,0,5,ph_mat_b)
+     matrix gs_seine(1,myrs,1,nages)
+     vector for_gs_seine(1,nages)//forecasted gear selectivity
+  
+     init_bounded_vector Sur_a(1,S_Bk,0.3,1,ph_Sur_a) //linear regression survival
+     init_bounded_vector Sur_b(1,S_Bk,0.01,0.2,ph_Sur_b)  //linear regression survival
+     matrix Sur(1,myrs,1,nages)    
+     vector for_sur(1,nages)//forecasted survival
+  
+     
+  // |---------------------------------------------------------------------------------|
+  // | Summations of estimated catch at age
+  // |  AC56:AC93
+  // |  AD56:AD93
+  // |---------------------------------------------------------------------------------|
+  // | 
+  // |- Inter-Med. Total
+  // |- Est. Total Catch x 106 
+
+     matrix sel_naa(1,myrs,1,nages);
+     matrix mat_naa(1,myrs,1,nages)
+
+     vector tot_sel_N(1,myrs)
+     vector tot_mat_N(1,myrs)
+
+     matrix sel_baa(1,myrs,1,nages)
+     vector tot_sel_B(1,myrs)
+
+
+  // |---------------------------------------------------------------------------------|
+  // | ESTIMATED AND DERIVED POPULATION MATRICES
+  // |---------------------------------------------------------------------------------|
+  // |- tot_post_N   total population [mature+ immature] - catch [millions]
+  // |- N            total abundance (mature + immature)         [millions]
+  // |- tot_sp_N     total spawning abundance                    [millions]
+  // |- est_sp_naa   spawning numbers-at-age[millions]
+  // |- tot_mat_B    total mature biomass [tonnes]
+  
+
+     
+     matrix est_mat_baa(1,myrs,1,nages)
+     vector tot_mat_B(1,myrs)
+     vector tot_mat_B_tons(1,myrs)
+     matrix naa(1,myrs,1,nages)
+     
+     matrix post_naa(1,myrs,1,nages)
+     matrix est_seine_comp(1,myrs,1,nages)
+     matrix est_seine_naa(1,myrs,1,nages)  
+     matrix est_mat_comp(1,myrs,1,nages) 
+     matrix est_catch_comp(1,myrs,1,nages)
+     matrix est_tot_catch(1,myrs,1,nages)
+     matrix est_sp_naa(1,myrs,1,nages)
+     vector tot_sp_N(1,myrs)  
+     vector tot_post_N(1,myrs)
+     vector N(1,myrs)
+
+// |---------------------------------------------------------------------------------|
+  // | FORECAST QUANTITIES
+  // |---------------------------------------------------------------------------------|
+  // | 
+  // |- for_naa         forecasted numbers-at-age  [mature + immature]       [millions]
+  // |- for_mat_naa     forecasted mature numbers-at-age                     [millions]
+  // |- for_mat_baa     forecasted mature biomass-at-age                     [metric tons] 
+  // |- for_mat_baa_st  forecasted mature biomass-at-age                     [tons]
+  // |- for_mat_prop    forecasted mature proportion-at-age [by number]      [proportion]
+  // |- for_mat_b_prop  forecasted mature proportion-at-age [by biomass]      [proportion]
+  // |- for_mat_w       forecasted mature proportion-at-age [by biomass]      [proportion]
+  // |- for_seine_w     forecasted weight of the purse seine harvest    
+  // |- for_mat_B       total forecasted mature biomass                      [metric tons]
+  // |- for_mat_B_st    total forecasted mature biomass                         [tons]  
+  // |- for_tot_mat_N   total mature numbers-at-age                   
+  // |- for_mat_weighted     Forecasted weight of the mature population       
+  // |- for_seine_weighted   Forecasted weight of the purse seine harvest 
+  // |- for_seine_naa        Forecasted seine numbers-at-age       
+  // |- for_tot_seine_N      Total seine numbers-at-age   
+  // |- for_seine_prop       Forecasted seine proportion-at-age [by number]      [proportion]
+  
+//  vector rtemp(1,10)   //#####
+  vector sortx(1,10)   //#########
+  vector for_naa(1,nages)
+  vector for_mat_naa(1,nages)        
+  vector for_mat_baa(1,nages) 
+  vector for_mat_baa_st(1,nages)
+  vector for_mat_prop(1,nages)
+  vector for_mat_b_prop(1,nages)
+  vector for_mat_w(1,nages)
+  vector for_seine_w(1,nages)
+
+  number for_mat_B                  
+  number for_mat_B_st		  
+  number for_tot_mat_N
+  number for_mat_weighted           
+  number for_seine_weighted
+  number medianx   //////####
+  
+  vector for_seine_prop(1,nages)
+  vector for_seine_naa(1,nages) 
+  number for_tot_seine_N
+   // |---------------------------------------------------------------------------------|
+  // | GRAPHICAL CONSTRUCTS
+  // |---------------------------------------------------------------------------------|
+  // | 
+  // |- These matrices are read in R for standardized graphical analyses and figures
+  // |- FIGDATA
+  // |- FIGDATAAGE
+
+   matrix FIGDATA(1,myrs,1,53)
+   matrix FIGDATAAGE(1,nages,1,4)
+
+  // |---------------------------------------------------------------------------------|
+  // | OBJECTIVE FUNCTION COMPONENTS
+  // |---------------------------------------------------------------------------------|
+  // | 
+  // |* Residuals *
+  // |- catch age composition      
+  // |- spawner age composition
+  // |- aerial
+  // |
+  // |* Sums of squares *
+  // |- catch age composition
+  // |- spawner age composition
+  // |- aerial
+  // |- ADMB minimization target f
+
+  matrix res_c_comp(1,myrs,1,nages);
+  matrix res_mat_comp(1,myrs,1,nages);
+  vector res_aerial(1,myrs);
+  
+  number Purse_Seine;
+  number Total_Run;
+  number Aerial_Biomass;
+
+  objective_function_value f;
+
+  // |---------------------------------------------------------------------------------|
+  // | AICc CONSTRUCTS
+  // |---------------------------------------------------------------------------------|
+  // | 
+  // |* Residuals *
+  // |- number of observations: catch age composition      
+  // |- number of observations: spawner age composition
+  // |- number of observations: egg deposition
+  // |
+  // |- vector of sample size
+  // |- weighting vector
+  // |- log-likelihood vector
+  // |
+  // |* Sums of squares *
+  // |- sum catch age observations
+  // |- sum spawner age observations
+  // |- sum egg observations
+  // |- sum all observations
+  // |
+  // |- AIC weighting terms
+  // |- Total L(like)
+  // |- AIC
+  // |- AICc
+  // |- number of parameters
+  // |
+  matrix n_obs_seine_comp(1,myrs,1,nages)
+  matrix n_obs_mat_comp(1,myrs,1,nages) 
+  vector n_tot_obs_aerial(1,myrs)
+
+  vector n_d(1,3)
+  vector w_d(1,3)
+  vector lnL_d(1,3)
+
+  number n_R
+  number n_M
+  number n_A
+  number n
+
+  number sig_1
+  number lnL
+  number AIC
+  number AICc
+  number p
+
+
+
+PRELIMINARY_CALCS_SECTION
+
+         mat_a(1)=6;
+         mat_a(2)=6;
+         mat_b(1)=1.2;
+         mat_b(2)=1.1;
+         gs_a=6;
+         gs_b=1;
+         Sur_a=0.8;
+         Sur_b=0.03;
+
+PROCEDURE_SECTION
+  get_parameters();
+  Time_Loop();
+  get_residuals();
+  evaluate_the_objective_function();
+  if(last_phase())
+    {
+      get_forecast();
+    } 
+
+   if(sd_phase())
+    {
+     get_FIGDATA();
+     output_FIGDATA();
+     get_FIGDATAAGE();
+     output_FIGDATAAGE();
+     compute_AICc();
+     get_report();
+    }
+
+  if(mceval_phase())
+    {
+     evalout<<for_mat_B_st<<" "
+          <<init_age_4<<" "
+          <<init_pop<<" "<<endl;
+    }
+
+FUNCTION get_parameters
+  gs_seine.initialize();
+  for_gs_seine.initialize();
+  maturity.initialize();
+  for_mat.initialize();
+  Sur.initialize();
+  for_sur.initialize();
+  
+
+  // Seine fishery-unconstrained then fix at age 9
+
+  for (int t=1;t<=gs_Bk;t++)
+  {
+    for (int i=gs_Bk_Idx(t);i<=gs_Bk_Idx(t+1);i++)
+       {
+         for (int j=1;j<=nages;j++)
+          {
+          if (j<=5)
+          {
+            gs_seine(i,j)=1/(1+exp(-1.0*gs_b(t)*((j+3)-gs_a(t))));//changed j+2 to j+3 so recruit is age-4
+          }
+          else
+          {
+          gs_seine(i,j)=1;
+          }
+       }
+   }
+  }  
+   for_gs_seine=gs_seine(myrs);//last year of maturity matrix is used as forecast
+   
+  // Early/late Maturity time periods unconstrained &  then fix ages 8+=1
+
+  for (int t=1;t<=mat_Bk;t++)
+  {
+    for (int i=mat_Bk_Idx(t);i<=mat_Bk_Idx(t+1);i++)
+       {
+         for (int j=1;j<=nages;j++)
+          {
+          if (j<=4)
+          {
+            maturity(i,j)=1/(1+exp(-1.0*mat_b(t)*((j+3)-mat_a(t))));//changed j+2 to j+3 so recruit is age-4
+          }
+          else
+          {
+          maturity(i,j)=1;
+          }
+       }
+   }
+  }         
+  for_mat = maturity(myrs);//last year of maturity matrix is used as forecast
+
+  //Survival (linear regression)
+  //Survival; to make survival the same for all ages and years, change (j<=5) to (j<=9)
+   for (int t=1;t<=S_Bk;t++)
+  {
+    for (int i=S_Bk_Idx(t);i<=S_Bk_Idx(t+1);i++)
+       {
+         for (int j=1;j<=nages;j++)
+          {
+          if (j<=5)
+          {
+            Sur(i,j)=Sur_a(t);
+          }
+          else
+          {
+          Sur(i,j) = Sur_a(t) - Sur_b(t)*((j+3)-(8));
+          }
+       }
+   }
+  }         
+  for_sur=Sur(myrs); //last year of survival matrix is used as forecast
+
+FUNCTION Time_Loop
+
+  naa.initialize();
+  est_mat_comp.initialize();
+  mat_naa.initialize();
+  sel_naa.initialize();
+  tot_sel_N.initialize();
+  est_seine_comp.initialize();
+  est_mat_comp.initialize();
+  
+
+  //----------------------------------------------------------------------------
+  // YEAR ONE
+  //----------------------------------------------------------------------------
+
+  for(int i=1;i<=1;i++)
+   {
+        naa(i,1)=init_age_4(i);              //recruitment vector - year 1
+     for(int j=2;j<=nages;j++)
+       {
+ 
+         naa(i,j)=init_pop(j-1);              //initial population - year 1
+       }
+   
+
+
+     for(int j=1;j<=nages;j++)
+       {
+         sel_naa(i,j)  = naa(i,j) * gs_seine(i,j);
+         mat_naa(i,j)  = naa(i,j) * maturity(i,j); 
+       }
+   
+
+
+   tot_sel_N = rowsum(sel_naa);
+   tot_mat_N = rowsum(mat_naa);
+   
+
+
+     for(int j=1;j<=nages;j++)
+       {
+         est_seine_comp(i,j) = sel_naa(i,j)/tot_sel_N(i);
+         est_mat_comp(i,j)   = mat_naa(i,j)/tot_mat_N(i);
+       }
+   
+  
+
+
+     for(int j=1;j<=nages;j++)
+       {
+         sel_baa(i,j) = obs_c_waa(i,j) * est_seine_comp(i,j);
+       }
+   
+
+   
+   tot_sel_B = rowsum(sel_baa);
+  
+
+
+     for(int j=1;j<=nages;j++)
+       {
+         est_seine_naa(i,j) = (tot_obs_catch_seine(i) / tot_sel_B(i))*est_seine_comp(i,j);
+       }
+   
+
+   for(int j=1;j<=nages;j++)
+     {
+       post_naa(i,j)=naa(i,j)-obs_catch_naa(i,j)-(est_seine_naa(i,j)); //numbers - catch
+     }
+   }
+
+
+  //----------------------------------------------------------------------------
+  // END FIRST YEAR LOOP
+  //----------------------------------------------------------------------------
+
+
+  //----------------------------------------------------------------------------
+  // ALL OTHER YEARS
+  //----------------------------------------------------------------------------
+
+
+  for(int i=2;i<=myrs;i++)
+    {
+    
+    for(int j=2;j<=nages;j++)
+      {
+      naa(i,1)=init_age_4(i);
+      naa(i,j)=post_naa(i-1,j-1)*Sur(i-1,j-1);  //naa: (numbers-catch)*survival
+      }
+      
+    for(int j=nages;j<=nages;j++)
+      {
+        naa(i,j)=post_naa(i-1,j-1)*Sur(i-1,j-1)+post_naa(i-1,j)*Sur(i-1,j); //+ class, naa
+      }
+
+
+
+     for(int j=1;j<=nages;j++)
+       {
+         sel_naa(i,j)  = naa(i,j) * gs_seine(i,j);//naa vulnerable to gear
+         mat_naa(i,j)  = naa(i,j) * maturity(i,j); 
+       }
+       
+
+
+   tot_sel_N = rowsum(sel_naa);//total selected by gear (abundance)
+   tot_mat_N = rowsum(mat_naa);//total mature abundance
+   
+
+
+     for(int j=1;j<=nages;j++)
+       {
+         est_seine_comp(i,j) = sel_naa(i,j)/tot_sel_N(i);//prop. at age; gear
+         est_mat_comp(i,j)   = mat_naa(i,j)/tot_mat_N(i);
+       }
+   
+
+
+
+     for(int j=1;j<=nages;j++)
+       {
+         sel_baa(i,j) = obs_c_waa(i,j) * est_seine_comp(i,j);
+       }
+   
+
+   
+   tot_sel_B = rowsum(sel_baa);
+  
+
+
+     for(int j=1;j<=nages;j++)
+       {
+         est_seine_naa(i,j) = (tot_obs_catch_seine(i) / tot_sel_B(i))*est_seine_comp(i,j);
+       }
+   
+
+   for(int j=1;j<=nages;j++)
+     {
+        post_naa(i,j)=naa(i,j)-obs_catch_naa(i,j)-(est_seine_naa(i,j)); //numbers - catch//post fishery abundance
+     }
+   }
+   
+    N=rowsum(naa);                  // total abundance (millions)
+    tot_post_N = rowsum(post_naa);  // total abundance [numbers - catch] (millions)
+
+   for(int i=1;i<=myrs;i++)
+     {
+       for(int j=1;j<=nages;j++)
+         {
+           est_mat_baa(i,j) = naa(i,j) * maturity(i,j) * obs_c_waa(i,j);
+         }
+     }
+
+  tot_mat_B = rowsum(est_mat_baa);//total mature biomass (tonnes)
+  tot_mat_B_tons = tot_mat_B*2204.62/2000;//total mature biomass (tons)
+
+
+  //----------------------------------------------------------------------------
+  // SPAWNERS & MATURE
+  //----------------------------------------------------------------------------
+//added this section 3/17/2017 (not sure if correct
+ for (int i=1;i<=myrs;i++)
+    {
+      
+      for(int j=1;j<=nages;j++)
+        {
+          est_sp_naa(i,j)=(maturity(i,j)*naa(i,j))-est_seine_naa(i,j)-obs_catch_naa(i,j);          //spawning numbers-at-age (differs for stocks) For Craig should be Mat *(naa-est_c_naa)
+        }}
+
+    tot_sp_N=rowsum(est_sp_naa);                                       //total spawning numbers
+  
+
+ 
+FUNCTION get_residuals
+
+  res_c_comp.initialize();
+  res_mat_comp.initialize();
+  res_aerial.initialize();
+
+
+
+  //----------------------------------------------------------------------------
+  // CATCH AGE COMPOSITION--Purse Seine
+  //----------------------------------------------------------------------------
+
+  for (int i=1;i<=myrs;i++) 
+    {
+      for (int j=1;j<=nages;j++)
+        {
+         if (obs_seine_comp(i,j)<0)
+            {
+              res_c_comp(i,j)=0;
+            }
+            else
+            {
+               res_c_comp(i,j)=obs_seine_comp(i,j)-est_seine_comp(i,j);
+             }
+        }
+   }
+
+  //----------------------------------------------------------------------------
+  // MATURE AGE COMPOSITION--Total Run
+  //----------------------------------------------------------------------------
+
+  for (int i=1;i<=myrs;i++)
+    {
+     for (int j=1;j<=nages;j++)
+       {
+         if (obs_mat_comp(i,j)<0)
+            {
+              res_mat_comp(i,j)=0;
+            }
+            else
+            {
+              res_mat_comp(i,j)=(obs_mat_comp(i,j)-est_mat_comp(i,j));
+            
+       }
+    }
+  }
+
+
+  //----------------------------------------------------------------------------
+  // AERIAL SURVEY
+  //----------------------------------------------------------------------------
+
+  for (int i=1;i<=myrs;i++) 
+    {
+          if (tot_obs_aerial(i)<0)
+            {
+              res_aerial(i)=0;
+            }
+          else
+            {
+              res_aerial(i)=(log(tot_obs_aerial(i))-log(tot_mat_B(i))) * sqrt(wt_aerial(i));
+            }
+        }
+
+
+
+
+  //WSSQM=sum(wSSQM);
+  Purse_Seine  = norm2(res_c_comp);
+  Total_Run = norm2(res_mat_comp);
+  Aerial_Biomass = norm2(res_aerial);
+
+
+FUNCTION evaluate_the_objective_function
+//moved the weights here, therefore, the SSQ need to be multiplied by weights to get f
+//similiar to SEAK stock coding
+  f=lR*Purse_Seine+lM*Total_Run+lA*Aerial_Biomass;
+
+FUNCTION get_forecast
+
+   dvector rtemp(1,10);
+
+   for (int j=1; j<=10; j++)
+      {
+        rtemp(j) = value(naa(myrs-j-1,1));
+      }
+
+  sortx = sort(rtemp);
+  medianx = (sortx(5)+sortx(6))/2; 
+  
+  for (int j=1;j<=1;j++)
+    {
+      for_naa(j)=medianx;     //forecast age 4 //numbers; 10-yr median prior to the last 2 yrs
+
+    }
+  for (int j=2;j<=nages-1;j++)
+    {
+      for_naa(j)=post_naa(myrs,j-1)*for_sur(j-1);                           //forecast naa, ages 5 - 11
+    }
+
+ 
+  for (int j=nages;j<=nages;j++)
+    {
+      for_naa(j)=post_naa(myrs,j-1)*for_sur(j-1)+post_naa(myrs,j)*for_sur(j);    //forecast naa, age 12+
+    }
+
+
+  for (int j=1;j<=nages;j++)
+    {
+      for_mat_naa(j)=for_naa(j)*for_mat(j);    //forecast mature numbers at age
+    }
+
+  for_tot_mat_N=sum(for_mat_naa);
+  
+    for (int j=1;j<=nages;j++)
+    {
+      for_seine_naa(j)=for_naa(j)*for_gs_seine(j);    //forecast mature numbers at age
+    }
+
+  for_tot_seine_N=sum(for_seine_naa);
+  
+
+  for (int j=1;j<=nages;j++)
+    {
+      for_mat_baa(j)=for_mat_naa(j)*fw_a_a(j);  //forecast mature biomass at age
+    }
+
+  for_mat_B=sum(for_mat_baa);
+
+  for (int j=1;j<=nages;j++)
+    {
+      for_mat_prop(j)=for_mat_naa(j)/for_tot_mat_N;  //forecast % mature at age
+    }
+  for (int j=1;j<=nages;j++)
+    {
+      for_mat_w(j)=for_mat_prop(j)*fw_a_a(j);  //forecast weight of the mature pop.
+    }
+      for_mat_weighted=sum(for_mat_w);
+  
+ for (int j=1;j<=nages;j++)
+    {
+      for_seine_prop(j)=for_seine_naa(j)/for_tot_seine_N;  //forecast % mature at age
+    }
+
+  for (int j=1;j<=nages;j++)
+    {
+      for_seine_w(j)=for_seine_prop(j)*fw_a_a(j);  //forecast weight of seine harvested fish
+    }
+      for_seine_weighted=sum(for_seine_w);
+
+  for (int j=1;j<=nages;j++)
+    {
+      for_mat_b_prop(j) = for_mat_baa(j)/for_mat_B;  //forecast % mature at age biomass
+    }
+
+  for_mat_B_st=for_mat_B*1.102311;                   //RETURN TO SHORT TONS
+  
+  for (int j=1;j<=nages;j++)
+    {
+     for_mat_baa_st(j)=for_mat_baa(j)*1.102311;  //forecast % mature at age biomass
+    }
+    
+FUNCTION get_FIGDATA
+  FIGDATA.initialize();
+  for (int i=1;i<=myrs;i++){
+  for (int j=1;j<=1;j++){FIGDATA(i,j)=tot_mat_B_tons(i);}// total mature biomass (tons) 
+  for (int j=2;j<=2;j++){FIGDATA(i,j)=tot_obs_aerial_tons(i);}//total observed aerial biomass (tons) 
+  for (int j=3;j<=3;j++){FIGDATA(i,j)=res_aerial(i);}//aerial survey residuals 
+  for (int j=4;j<=4;j++){FIGDATA(i,j)=init_age_4(i);}//age-3 recruit strength 
+  for (int j=5;j<=13;j++){FIGDATA(i,j)=est_seine_comp(i,j-4);}//proportion of N selected by gear (estimated) 
+  for (int j=14;j<=22;j++){FIGDATA(i,j)=obs_seine_comp(i+md_offset,j-13);}//observed catch compostion
+  for (int j=23;j<=31;j++){FIGDATA(i,j)=est_mat_comp(i,j-22);}//estimated mature  age composition 
+  for (int j=32;j<=40;j++){FIGDATA(i,j)=obs_mat_comp(i+md_offset,j-31);}//observed mature  age composition 
+  for (int j=41;j<=41;j++){FIGDATA(i,j)=tot_post_N(i);}// total population [mature+ immature] - catch [millions]   
+  for (int j=42;j<=42;j++){FIGDATA(i,j)=N(i);}// total abundance (mature + immature [millions] 
+  for (int j=43;j<=43;j++){FIGDATA(i,j)=tot_sp_N(i);} // total spawning abundance [millions]
+  for (int j=44;j<=44;j++){FIGDATA(i,j)=tot_mat_N(i);} // total mature abundance[millions] 
+  for (int j=45;j<=45;j++){FIGDATA(i,j)=tot_obs_aerial_tuned_tons(i);} // total observed aerial biomass-tuned to model (tons) 
+  for (int j=46;j<=46;j++){FIGDATA(i,j)=threshold(i);}// threshold
+  for (int j=47;j<=47;j++){FIGDATA(i,j)=yminusfour(i);} //mature biomass (tons) 
+  for (int j=48;j<=48;j++){FIGDATA(i,j)=yminusthree(i);} //mature biomass (tons) 
+  for (int j=49;j<=49;j++){FIGDATA(i,j)=yminustwo(i);} //mature biomass (tons) 
+  for (int j=50;j<=50;j++){FIGDATA(i,j)=yminusone(i);} //mature biomass  (tons)
+  for (int j=51;j<=51;j++){FIGDATA(i,j)=mod_yrs(i);}//model years
+  for (int j=52;j<=52;j++){FIGDATA(i,j)=past_forecasts(i);}//prior forecasts
+  for (int j=53;j<=53;j++){FIGDATA(i,j)=tot_obs_catch_tons(i);}}//total observed catch in tons
+FUNCTION output_FIGDATA
+
+ ofstream figdata("FIGDATA.dat");
+ figdata<<"tot_mat_B_tons tot_obs_aerial_tons res_aerial init_age_4 est_seine_comp4 est_seine_comp5 est_seine_comp6 est_seine_comp7 est_seine_comp8 est_seine_comp9 est_seine_comp10 est_seine_comp11 est_seine_comp12 obs_seine_comp4 obs_seine_comp5 obs_seine_comp6 obs_seine_comp7 obs_seine_comp8 obs_seine_comp9 obs_seine_comp10 obs_seine_comp11 obs_seine_comp12 est_mat_comp4 est_mat_comp5 est_mat_comp6 est_mat_comp7 est_mat_comp8 est_mat_comp9 est_mat_comp10 est_mat_comp11 est_mat_comp12 obs_mat_comp4 obs_mat_comp5 obs_mat_comp6 obs_mat_comp7 obs_mat_comp8 obs_mat_comp9 obs_mat_comp10 obs_mat_comp11 obs_mat_comp12 tot_post_N N tot_sp_N tot_mat_N tot_obs_aerial_tuned_tons threshold yminusfour yminusthree yminustwo yminusone Year past_forecasts tot_obs_catch_tons"<<endl;
+ figdata<<FIGDATA<<endl;
+
+FUNCTION get_FIGDATAAGE
+  FIGDATAAGE.initialize();
+  for (int i=1;i<=nages;i++){
+ //Mature biomass at age (forecasted; tons)
+  for (int j=1;j<=1;j++){FIGDATAAGE(i,j)=for_mat_baa_st(i);}
+ //Mature numbers at age (forecasted; proportion)
+  for (int j=2;j<=2;j++){FIGDATAAGE(i,j)=for_mat_prop(i);}
+ //Forecasted weight at age
+  for (int j=3;j<=3;j++){FIGDATAAGE(i,j)=fw_a_a(i);}
+  //Mature biomass at age (forecasted; proportion)
+  for (int j=4;j<=4;j++){FIGDATAAGE(i,j)=for_mat_b_prop(i);}}
+  
+FUNCTION output_FIGDATAAGE
+
+ ofstream figdataage("FIGDATAAGE.dat");
+ figdataage<<"for_mat_baa_st for_mat_prop fw_a_a for_mat_b_prop"<<endl;
+ figdataage<<FIGDATAAGE<<endl;
+ 
+FUNCTION compute_AICc
+  n_obs_seine_comp.initialize();
+  n_R.initialize();
+  n_obs_mat_comp.initialize();
+  n_M.initialize();
+  n_tot_obs_aerial.initialize();
+  n_A.initialize();
+  
+  n_d.initialize();
+  n.initialize();
+  
+  sig_1.initialize();
+  w_d.initialize();
+  lnL_d.initialize();
+  lnL.initialize();
+  AIC.initialize();
+  AICc.initialize();
+  p.initialize();
+
+  //Compute sample sizes
+  
+   //Catch age comp-Purse seine
+  for (int i=1;i<=myrs;i++)
+    {
+      for (int j=1;j<=nages;j++)
+        {
+          if (obs_seine_comp(i+md_offset,j)<0)
+            {
+              n_obs_seine_comp(i,j)=0;
+            }
+          else
+            {
+              n_obs_seine_comp(i,j)=1;
+            }
+        }
+    }
+
+  n_R=sum(n_obs_seine_comp);
+  
+  cout <<n_R<<endl; 
+  //Mature Age Composision-Total Run
+  for (int i=1;i<=myrs;i++)
+    {
+      for (int j=1;j<=nages;j++)
+        {
+          if (obs_mat_comp(i+md_offset,j)<0)
+            {
+              n_obs_mat_comp(i,j)=0;
+            }
+          else
+            {
+              n_obs_mat_comp(i,j)=1;
+            }
+        }
+     }
+
+  n_M=sum(n_obs_mat_comp);
+ cout <<n_M<<endl; 
+  //Aerial Survey
+  for (int i=1;i<=myrs;i++)
+        {
+          if (wt_aerial(i)<=0)
+            {
+              n_tot_obs_aerial(i)=0;
+            }
+          else
+            {
+              n_tot_obs_aerial(i)=1;
+            }
+        }
+  n_A=sum(n_tot_obs_aerial);
+  cout <<n_A<<endl; 
+  //Set up sample size vector
+  n_d(1)=n_R;
+  n_d(2)=n_M;
+  n_d(3)=n_A;
+
+  n=sum(n_d);
+  //Set up weighting vector
+  w_d(1)=lR;
+  w_d(2)=lM;
+  w_d(3)=lA;
+  
+  //Set up sigma vector
+  sig_1=f/n;
+  cout <<sig_1<<endl; 
+    //Calculate log likelihood
+  for (int i=1;i<=3;i++){ 
+  if(w_d(i)>0){
+   lnL_d(i)=-n_d(i)/2*(log(2*3.141593*sig_1/w_d(i))+1);}
+  else{
+   lnL_d(i)=0;}}
+  cout <<lnL_d<<endl;
+  lnL=sum(lnL_d);
+
+  
+  cout <<lnL<<endl; 
+  //Compute AIC and AICc
+  p=initial_params::nvarcalc();
+  AIC=-2*lnL+2*p;
+  AICc=AIC+2*p*(p+1)/(n-p-1);
+
+
+FUNCTION get_report
+       ofstream Report("Report (Togiak Stock).csv");
+           int vsize = Year.size();
+    Report << "MODEL RESULTS:" <<endl;
+    Report<<"Objective function value:"<<","<<f<<endl;
+    Report<<"AICc"<<","<<AICc<<endl;
+    Report<<"AIC"<<","<<AIC<<endl;
+    Report<<"  "<<endl;
+
+    Report<<"Dataset Components (unweighted):"<<endl;
+    Report<<"Catch SSQ"<<","<<Purse_Seine<<endl;
+    Report<<"Total Run"<<","<<Total_Run<<endl;
+    Report<<"Aerial Biomass"<<","<<Aerial_Biomass<<endl;
+    Report<<"  "<<endl;
+    Report<<"Sample Sizes:"<<endl;
+    Report<<"Catch SSQ"<<","<<n_R<<endl;
+    Report<<"Total Run"<<","<<n_M<<endl;
+    Report<<"Aerial Biomass"<<","<<n_A<<endl;
+    Report<<"  "<<endl;
+
+    Report<<"Log Likehoods:"<<endl;
+    Report<<"Catch SSQ"<<","<<lnL_d[1]<<endl;
+    Report<<"Total Run"<<","<<lnL_d[2]<<endl;
+    Report<<"Aerial Biomass"<<","<<lnL_d[3]<<endl;
+    Report<<"Total Log Likelihood"<<","<<lnL<<endl;
+    Report<<"Number of parameters"<<","<<p<<endl;
+    Report<<"  "<<endl;
+    Report<<"Data Weights:"<<endl;
+    Report<<"Catch SSQ"<<","<<lR<<endl;
+    Report<<"Total Run"<<","<<lM<<endl;
+    Report<<"Aerial Biomass"<<","<<lA<<endl;
+    Report<<"  "<<endl;
+   
+    Report<<"FORECASTED INFORMATION:"<<endl;
+    Report<<"Forecast Mature Biomass (tons)"<<","<<for_mat_B_st<<endl;
+    Report<<"Forecast Mature Numbers-at-age (millions)"<<","<<for_tot_mat_N<<endl;
+    Report<<"  "<<endl;
+    Report<<","<<"Age 4"<<","<<"Age 5"<<","<<"Age 6"<<","<<"Age 7"<<","<<"Age 8"<<","<<"Age 9 "<<","<<"Age 10"<<","<<"Age 11"<<","<<"Age 12+"<<endl;
+    Report<<"Forecasted numbers-at-age (millions)"<<","<<for_naa[1]<<","<<for_naa[2]<<","<<for_naa[3]<<","<<for_naa[4]<<","<<for_naa[5]<<","<<for_naa[6]<<","<<for_naa[7]<<","<<for_naa[8]<<","<<for_naa[9]<<endl;
+    Report<<"Forecasted mature numbers-at-age (millions)"<<","<<for_mat_naa[1]<<","<<for_mat_naa[2]<<","<<for_mat_naa[3]<<","<<for_mat_naa[4]<<","<<for_mat_naa[5]<<","<<for_mat_naa[6]<<","<<for_mat_naa[7]<<","<<for_mat_naa[8]<<","<<for_mat_naa[9]<<endl;
+  Report<<"Forecasted mature biomass-at-age (tons)"<<","<<for_mat_baa_st[1]<<","<<for_mat_baa_st[2]<<","<<for_mat_baa_st[3]<<","<<for_mat_baa_st[4]<<","<<for_mat_baa_st[5]<<","<<for_mat_baa_st[6]<<","<<for_mat_baa_st[7]<<","<<for_mat_baa_st[8]<<","<<for_mat_baa_st[9]<<endl;
+    
+    Report<<"Forecasted mature prop. at age (by number)"<<","<<for_mat_prop[1]<<","<<for_mat_prop[2]<<","<<for_mat_prop[3]<<","<<for_mat_prop[4]<<","<<for_mat_prop[5]<<","<<for_mat_prop[6]<<","<<for_mat_prop[7]<<","<<for_mat_prop[8]<<","<<for_mat_prop[9]<<endl;
+    Report<<"Forecasted mature prop. at age (by biomass)"<<","<<for_mat_b_prop[1]<<","<<for_mat_b_prop[2]<<","<<for_mat_b_prop[3]<<","<<for_mat_b_prop[4]<<","<<for_mat_b_prop[5]<<","<<for_mat_b_prop[6]<<","<<for_mat_b_prop[7]<<","<<for_mat_b_prop[8]<<","<<for_mat_b_prop[9]<<endl;
+   
+    Report<<"  "<<endl;
+    
+    Report << "ESTIMATED BY MODEL (PARAMETERS):" <<endl;
+    Report<<"init_age_4:"<<","<<"Estimated mature and immature age-3 abundance (recruitment in milllions)"<<endl;
+    Report<<"Year"<<","<<"init_age_4"<<endl;
+
+    for(int n; n<=vsize-2; n++)
+    Report<<Year[n+mod_syr]<<","<<init_age_4[n+1]<<endl;
+    Report<<"  "<<endl;
+
+    Report<<","<<"Age 5"<<","<<"Age 6"<<","<<"Age 7"<<","<<"Age 8"<<","<<"Age 9"<<","<<"Age 10 "<<","<<"Age 11"<<","<<"Age 12+"<<endl;
+    Report<<"initial population (1980; millions of fish)"<<","<<init_pop[1]<<","<<init_pop[2]<<","<<init_pop[3]<<","<<init_pop[4]<<","<<init_pop[5]<<","<<init_pop[6]<<","<<init_pop[7]<<","<<init_pop[8]<<endl;
+    
+    Report<<"  "<<endl;
+    Report<<"Estimated Gear Selectivity"<<endl;
+    Report<<"Year"<<","<<"Age 4"<<","<<"Age 5"<<","<<"Age 6"<<","<<"Age 7"<<","<<"Age 8"<<","<<"Age 9 "<<","<<"Age 10"<<","<<"Age 11"<<","<<"Age12+"        <<endl;
+    for(int n; n<=vsize-2; n++)
+    Report<<Year[n+mod_syr]<<","<<gs_seine(n+1,1)<<","<<gs_seine(n+1,2)<<","<<gs_seine(n+1,3)<<","<<gs_seine(n+1,4)<<","<<gs_seine(n+1,5)<<","<<gs_seine     (n+1,6)<<","<<gs_seine(n+1,7)<<","<<gs_seine(n+1,8)<<","<<gs_seine(n+1,9)<<endl;
+    Report<<"  "<<endl;
+
+    Report<<"Estimated Maturity"<<endl;
+    Report<<"Year"<<","<<"Age 4"<<","<<"Age 5"<<","<<"Age 6"<<","<<"Age 7"<<","<<"Age 8"<<","<<"Age 9 "<<","<<"Age 10"<<","<<"Age 11"<<","<<"Age12+"        <<endl;
+    for(int n; n<=vsize-2; n++)
+    Report<<Year[n+mod_syr]<<","<<maturity(n+1,1)<<","<<maturity(n+1,2)<<","<<maturity(n+1,3)<<","<<maturity(n+1,4)<<","<<maturity(n+1,5)<<","<<maturity     (n+1,6)<<","<<maturity(n+1,7)<<","<<maturity(n+1,8)<<","<<maturity(n+1,9)<<endl;
+    Report<<"  "<<endl;
+    
+    Report<<"Estimated Survival"<<endl;
+    Report<<"Year"<<","<<"Age 4"<<","<<"Age 5"<<","<<"Age 6"<<","<<"Age 7"<<","<<"Age 8"<<","<<"Age 9 "<<","<<"Age 10"<<","<<"Age 11"<<","<<"Age12     +"<<endl;
+    for(int n; n<=vsize-2; n++)
+    Report<<Year[n+mod_syr]<<","<<Sur(n+1,1)<<","<<Sur(n+1,2)<<","<<Sur(n+1,3)<<","<<Sur(n+1,4)<<","<<Sur(n+1,5)<<","<<Sur(n+1,6)<<","<<Sur(n+1,7)<<","     <<Sur(n+1,8)<<","<<Sur(n+1,9)<<endl;
+    Report<<"  "<<endl;
+     Report<<"  "<<endl;
+
+    Report << "ESTIMATED BY MODEL:" <<endl;
+    Report<<"tot_sel_N:"<<","<<"Estimated pre-fishery numbers (naa) x estimated gear selectivity; Estimated total abundance selected by gear (millions)"<<endl;
+    Report<<"tot_mat_N:"<<","<<"Estimated total mature abundance (millions)"<<endl;
+    Report<<"tot_sel_B:"<<","<<"Observed weight-at-age x estimated age composition of catch"<<endl;
+    Report<<"tot_sp_N:"<<","<<"Estimated total spawning abundance (millions)"<<endl;
+    Report<<"N:"<<","<<"Estimated pre-fishery total abundance (millions)"<<endl;
+    Report<<"tot_mat_B_tons:"<<","<<"Estimated total mature biomass (tons)"<<endl;
+    Report<<"tot_post_N:"<<","<<"Estimated post fishery total abundance (millions)"<<endl;
+    Report<<"  "<<endl;
+    
+    Report<<"Year"<<","<<"tot_sel_N"<<","<<"tot_mat_N"<<","<<"tot_sel_B"<<","<<"tot_sp_N"<<","<<"N"<<","<<"tot_mat_B_tons"<<","<<"tot_post_N"<<endl;
+    
+    for(int n; n<=vsize-2; n++)
+    Report<<Year[n+mod_syr]<<","<<tot_sel_N[n+1]<<","<<tot_mat_N[n+1]<<","<<tot_sel_B[n+1]<<","<<tot_sp_N[n+1]<<","<<N[n+1]<<","<<tot_mat_B_tons[n+1]<<"     ,"<<tot_post_N[n+1]<<endl;
+    Report<<"  "<<endl;
+    
+    Report<<"Estimated pre-fishery total abundance (millions); naa"<<endl;
+    Report<<"*Note: initial population in year 1980 and init_age_4 are estimated parameters"<<endl;
+    Report<<"Year"<<","<<"Age 4"<<","<<"Age 5"<<","<<"Age 6"<<","<<"Age 7"<<","<<"Age 8"<<","<<"Age 9 "<<","<<"Age 10"<<","<<"Age 11"<<","<<"Age 12+"       <<endl;
+    for(int n; n<=vsize-2; n++)
+    Report<<Year[n+mod_syr]<<","<<naa(n+1,1)<<","<<naa(n+1,2)<<","<<naa(n+1,3)<<","<<naa(n+1,4)<<","<<naa(n+1,5)<<","<<naa(n+1,6)<<","<<naa(n+1,7)<<","     <<naa(n+1,8)<<","<<naa(n+1,9)<<endl;
+    Report<<"  "<<endl;
+
+    Report<<"Estimated post-fishery total abundance (millions); post_naa"<<endl;
+    Report<<"Year"<<","<<"Age 4"<<","<<"Age 5"<<","<<"Age 6"<<","<<"Age 7"<<","<<"Age 8"<<","<<"Age 9 "<<","<<"Age 10"<<","<<"Age 11"<<","<<"Age 12+"       <<endl;
+    for(int n; n<=vsize-2; n++)
+    Report<<Year[n+mod_syr]<<","<<post_naa(n+1,1)<<","<<post_naa(n+1,2)<<","<<post_naa(n+1,3)<<","<<post_naa(n+1,4)<<","<<post_naa(n+1,5)<<","<<post_naa     (n+1,6)<<","<<post_naa(n+1,7)<<","<<post_naa(n+1,8)<<","<<post_naa(n+1,9)<<endl;
+    Report<<"  "<<endl;
+
+    Report<<"Estimated mature numbers-at-age (pre-fishery); mat_naa"<<endl;
+    Report<<"Year"<<","<<"Age 4"<<","<<"Age 5"<<","<<"Age 6"<<","<<"Age 7"<<","<<"Age 8"<<","<<"Age 9 "<<","<<"Age 10"<<","<<"Age 11"<<","<<"Age 12+"       <<endl;
+    for(int n; n<=vsize-2; n++)
+    Report<<Year[n+mod_syr]<<","<<mat_naa(n+1,1)<<","<<mat_naa(n+1,2)<<","<<mat_naa(n+1,3)<<","<<mat_naa(n+1,4)<<","<<mat_naa(n+1,5)<<","<<mat_naa(n+1,6     )<<","<<mat_naa(n+1,7)<<","<<mat_naa(n+1,8)<<","<<mat_naa(n+1,9)<<endl;
+    Report<<"  "<<endl;
+
+    Report<<"Estimated pre-fishery total abundance x estimated gear selectivity; sel_naa"<<endl;
+    Report<<"Year"<<","<<"Age 4"<<","<<"Age 5"<<","<<"Age 6"<<","<<"Age 7"<<","<<"Age 8"<<","<<"Age 9 "<<","<<"Age 10"<<","<<"Age 11"<<","<<"Age 12+"       <<endl;
+    for(int n; n<=vsize-2; n++)
+    Report<<Year[n+mod_syr]<<","<<sel_naa(n+1,1)<<","<<sel_naa(n+1,2)<<","<<sel_naa(n+1,3)<<","<<sel_naa(n+1,4)<<","<<sel_naa(n+1,5)<<","<<sel_naa(n+1,6     )<<","<<sel_naa(n+1,7)<<","<<sel_naa(n+1,8)<<","<<sel_naa(n+1,9)<<endl;
+    Report<<"  "<<endl;
+
+    //Report<<"Estimated mature biomass-at-age (tonnes); est_mat_baa"<<endl;
+    //Report<<"Year"<<","<<"Age 4"<<","<<"Age 5"<<","<<"Age 6"<<","<<"Age 7"<<","<<"Age 8"<<","<<"Age 9 "<<","<<"Age 10"<<","<<"Age 11"<<","<<"Age 12+"     <<endl;
+    //for(int n; n<=vsize-2; n++)
+    //Report<<Year[n+mod_syr]<<","<<est_mat_baa(n+1,1)<<","<<est_mat_baa(n+1,2)<<","<<est_mat_baa(n+1,3)<<","<<est_mat_baa(n+1,4)<<","<<est_mat_baa(n+1     ,5)<<","<<est_mat_baa(n+1,6)<<","<<est_mat_baa(n+1,7)<<","<<est_mat_baa(n+1,8)<<","<<est_mat_baa(n+1,9)<<endl;
+    //Report<<"  "<<endl;
+    
+    Report<<"obs_c_waa (observed commercial catch weight at age) x est_seine_comp (estimated seine age composition); sel_baa"<<endl;
+    Report<<"Year"<<","<<"Age 4"<<","<<"Age 5"<<","<<"Age 6"<<","<<"Age 7"<<","<<"Age 8"<<","<<"Age 9 "<<","<<"Age 10"<<","<<"Age 11"<<","<<"Age 12+"       <<endl;
+    for(int n; n<=vsize-2; n++)
+    Report<<Year[n+mod_syr]<<","<<sel_baa(n+1,1)<<","<<sel_baa(n+1,2)<<","<<sel_baa(n+1,3)<<","<<sel_baa(n+1,4)<<","<<est_mat_baa(n+1,5)<<","<<sel_baa(n     +1,6)<<","<<sel_baa(n+1,7)<<","<<sel_baa(n+1,8)<<","<<sel_baa(n+1,9)<<endl;
+    Report<<"  "<<endl;
+
+    Report<<"Estimated age composition of catch; est_seine_comp"<<endl;
+    Report<<"Year"<<","<<"Age 4"<<","<<"Age 5"<<","<<"Age 6"<<","<<"Age 7"<<","<<"Age 8"<<","<<"Age 9 "<<","<<"Age 10"<<","<<"Age 11"<<","<<"Age 12+"       <<endl;
+    for(int n; n<=vsize-2; n++)
+    Report<<Year[n+mod_syr]<<","<<est_seine_comp(n+1,1)<<","<<est_seine_comp(n+1,2)<<","<<est_seine_comp(n+1,3)<<","<<est_seine_comp(n+1,4)<<","            <<est_seine_comp(n+1,5)<<","<<est_seine_comp(n+1,6)<<","<<est_seine_comp(n+1,7)<<","<<est_seine_comp(n+1,8)<<","<<est_seine_comp(n+1,9)<<endl;
+    Report<<"  "<<endl;
+
+    Report<<"Estimated mature age compostion of total run (pre-fishery); est_mat_comp"<<endl;
+    Report<<"Year"<<","<<"Age 4"<<","<<"Age 5"<<","<<"Age 6"<<","<<"Age 7"<<","<<"Age 8"<<","<<"Age 9 "<<","<<"Age 10"<<","<<"Age 11"<<","<<"Age 12+"       <<endl;
+    for(int n; n<=vsize-2; n++)
+    Report<<Year[n+mod_syr]<<","<<est_mat_comp(n+1,1)<<","<<est_mat_comp(n+1,2)<<","<<est_mat_comp(n+1,3)<<","<<est_mat_comp(n+1,4)<<","<<est_mat_comp(n     +1,5)<<","<<est_mat_comp(n+1,6)<<","<<est_mat_comp(n+1,7)<<","<<est_mat_comp(n+1,8)<<","<<est_mat_comp(n+1,9)<<endl;
+    Report<<"  "<<endl;
+
+    Report<<"Estimated spawning numbers-at-age (post-fishery); est_sp_naa"<<endl;
+    Report<<"Year"<<","<<"Age 4"<<","<<"Age 5"<<","<<"Age 6"<<","<<"Age 7"<<","<<"Age 8"<<","<<"Age 9 "<<","<<"Age 10"<<","<<"Age 11"<<","<<"Age 12+"       <<endl;
+    for(int n; n<=vsize-2; n++)
+    Report<<Year[n+mod_syr]<<","<<est_sp_naa(n+1,1)<<","<<est_sp_naa(n+1,2)<<","<<est_sp_naa(n+1,3)<<","<<est_sp_naa(n+1,4)<<","<<est_sp_naa(n+1,5)<<","     <<est_sp_naa(n+1,6)<<","<<est_sp_naa(n+1,7)<<","<<est_sp_naa(n+1,8)<<","<<est_sp_naa(n+1,9)<<endl;
+    Report<<"  "<<endl;
+
+
+       
+    Report << "OBSERVED DATA:" <<endl;
+    Report<<"tot_obs_catch_tons:"<<","<<"Total observed catch (tons); seine and gillnet harvest combined"<<endl;
+    Report<<"tot_obs_catch_seine_tons:"<<","<<"Total observed catch (tons); seine harvest"<<endl;
+    Report<<"tot_obs_catch_gillnet_tons:"<<","<<"Total observed catch (tons); gillnet harvest"<<endl;
+    Report<<"tot_obs_aerial_tons:"<<","<<"Observed aerial biomass (tons)"<<endl;
+    Report<<"tot_obs_aerial_tuned_tons:"<<","<<"Observed aerial biomass (tons)-used in model"<<endl;
+    Report<<"wt_aerial:"<<","<<"Observed aerial survey weights"<<endl;
+    Report<<"  "<<endl;
+    
+    Report<<"Year"<<","<<"tot_obs_catch_tons"<<","<<"tot_obs_catch_seine_tons"<<","<<"tot_obs_catch_gillnet_tons"<<","<<"tot_obs_aerial_tons"<<","<<"tot_obs_aerial_tuned_tons"<<","<<"wt_aerial"<<endl;
+    
+    for(int n; n<=vsize-2; n++)
+    Report<<Year[n+mod_syr]<<","<<tot_obs_catch_tons[n+1]<<","<<tot_obs_catch_seine_tons[n+1]<<","
+    <<tot_obs_catch_gillnet_tons[n+1]<<","<<tot_obs_aerial_tons[n+1]<<","<<tot_obs_aerial_tuned_tons[n+1]<<","<<wt_aerial[n+1]<<endl;
+    Report<<"  "<<endl;
+  
+
+    Report.close();
+
+RUNTIME_SECTION
+  maximum_function_evaluations 5000 5000 5000 5000
+  convergence_criteria 0.0001
+
+
+TOP_OF_MAIN_SECTION
+  arrmblsize=5000000;
+  gradient_structure::set_MAX_NVAR_OFFSET(5000);
+  gradient_structure::set_GRADSTACK_BUFFER_SIZE(800000);
+  gradient_structure::set_CMPDIF_BUFFER_SIZE(800000);
+  gradient_structure::set_NUM_DEPENDENT_VARIABLES(5000);
+
+
+GLOBALS_SECTION
+	#include <admodel.h>
+	#include <string.h>
+	#include <time.h>
+        adstring model_name;
+        adstring data_file;
+
+
+	time_t start,finish;
+	long hour,minute,second;
+	double elapsed_time;
+
+	adstring BaseFileName;
+	adstring ReportFileName;
+	adstring NewFileName;
+
+	adstring stripExtension(adstring fileName)
+	{
+		/*
+		This function strips the file extension
+		from the fileName argument and returns
+		the file name without the extension.
+		*/
+		const int length = fileName.size();
+		for (int i=length; i>=0; --i)
+		{
+			if (fileName(i)=='.')
+			{
+				return fileName(1,i-1);
+			}
+		}
+		return fileName;
+	}
+
+
+  #undef REPORT
+  #define REPORT(object) report << #object "\n" << setw(8) \
+  << setprecision(4) << setfixed() << object << endl;
+
+REPORT_SECTION 
+  REPORT(gs_seine);
+  REPORT(sel_naa);
+  REPORT(tot_sel_N);
+  REPORT(est_seine_comp);
+  REPORT(res_c_comp);
+
+  REPORT(est_mat_comp);
+  REPORT(res_mat_comp)
+  REPORT(naa);
+  REPORT(post_naa);
+  REPORT(Sur);
+
+  REPORT(mat_naa);
+  REPORT(maturity);
+
+  REPORT(sel_baa);
+  REPORT(tot_sel_B);
+
+  REPORT(est_seine_naa);
+  REPORT(res_aerial);
+  REPORT(est_mat_baa);
+  REPORT(tot_mat_B);
+  REPORT(Aerial_Biomass);
+  REPORT(Total_Run);
+  REPORT(Purse_Seine);
+  REPORT(tot_obs_catch_tons);
+  REPORT(wt_aerial);
+
+  REPORT(obs_catch_naa);
+  REPORT(obs_c_waa);
+  REPORT(obs_seine_comp);
+
+  REPORT(tot_obs_catch_seine);
+  REPORT(tot_mat_N);
+  REPORT(f);
+  REPORT(Purse_Seine);
+  REPORT(Total_Run);
+  REPORT(Aerial_Biomass);
+  REPORT(tot_sp_N);
+  REPORT(N);
+ 
+  REPORT(for_naa);
+  REPORT(for_mat_naa);
+  REPORT(for_mat_baa);
+  REPORT(for_mat_baa_st);
+  REPORT(for_mat_prop);
+  REPORT(for_mat_b_prop);
+  REPORT(for_mat_B);
+  REPORT(for_mat_B_st);
+  REPORT(for_tot_mat_N);
+  REPORT(yminusfourFOR);
+  REPORT(yminusthreeFOR);
+  REPORT(yminustwoFOR);
+  REPORT(yminusoneFOR);
+  REPORT(for_mat_weighted);
+  REPORT(for_seine_weighted);
+  REPORT(Sur_a);
+  REPORT(Sur_b);
+  REPORT(AICc);
+  REPORT(n_R);
+  REPORT(n_M);
+  REPORT(n_A);
+  REPORT(n);
+  REPORT(w_d);
+  REPORT(sig_1);
+  REPORT(lnL);
+  
+	//  Print run time statistics to the screen.
+	time(&finish);
+	elapsed_time=difftime(finish,start);
+	hour=long(elapsed_time)/3600;
+	minute=long(elapsed_time)%3600/60;
+	second=(long(elapsed_time)%3600)%60;
+	cout<<endl<<endl<<"*******************************************"<<endl;
+	cout<<"--Start time: "<<ctime(&start)<<endl;
+	cout<<"--Finish time: "<<ctime(&finish)<<endl;
+	cout<<"--Runtime: ";
+	cout<<hour<<" hours, "<<minute<<" minutes, "<<second<<" seconds"<<endl;
+        cout<<""<<endl;
+	cout<<"--Objective function value: "<<f<<endl;
+        cout<<""<<endl;
+        cout<<""<<endl;
+	cout<<"--Maximum gradient component: "<<objective_function_value::gmax<<endl;
+        cout<<""<<endl;
+	cout<<"*******************************************"<<endl;
+
+        cout<<""<<endl;
+        cout<< "O frabjous day!"<<endl;
+        cout<< "The sheep frolic!"<<endl;
+        cout<<""<<endl;
+        cout<<"        ...moo..."<<endl;
+        cout<<"            | "<<endl;
+        cout<<"            | "<<endl;
+        cout<<"            | "<<endl;
+        cout<<"             _.%%%%%%%%%%%%%             " <<endl;
+        cout<<"            //-_%%%%%%%%%%%%%            " <<endl;
+        cout<<"           (_ %\\%%%%%%%%%%%%%%~             "<<endl;
+        cout<<"               %%%%%%%%%%%%%%             "<<endl;
+        cout<<"                 %%%%%*%%%%              "<<endl;
+        cout<<"            ,,,,,,||,,,,||,,,,,         "<<endl;
+        cout<<""<<endl;
